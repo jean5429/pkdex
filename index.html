@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Pokémon List - National Dex</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Global Box Sizing for consistent layout */
+        html {
+            box-sizing: border-box;
+        }
+        *, *::before, *::after {
+            box-sizing: inherit;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font */
+            background-color: #f0f2f5; /* Light gray background */
+        }
+
+        /* Custom styles for elements not easily handled by Tailwind or for specific overrides */
+        .card-custom {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Stronger shadow */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .card-custom:hover {
+            transform: translateY(-5px); /* Lift effect on hover */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Generation filter buttons */
+        .filter-btn {
+            /* Base styling */
+            @apply px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-800 font-semibold cursor-pointer transition-all duration-200 ease-in-out;
+        }
+        .filter-btn:hover {
+            /* More distinct hover: darker background, slight lift, and shadow */
+            transform: translateY(-2px); /* Slightly more lift */
+            @apply bg-gray-200 shadow-md; /* Darker background, more pronounced shadow */
+        }
+        .filter-btn.active {
+            /* More visible selected state: solid blue background, white text, matching border, and subtle inner shadow */
+            @apply bg-blue-600 text-white border-blue-600; /* Solid blue background, white text */
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.2); /* Subtle inner shadow for pressed look */
+        }
+
+        /* Pokémon list container */
+        .pokemon-grid-container {
+            display: grid;
+            gap: 16px; /* Gap between Pokémon cards */
+            padding: 16px;
+            /* Responsive grid columns: default for small screens, then adjust for larger */
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Smaller min-width for mobile */
+            justify-items: center; /* Center cards within their grid cells */
+            max-height: calc(100vh - 200px); /* Adjust based on header height */
+            overflow-y: auto; /* Make the list scrollable */
+            border: 1px solid #d1d5db; /* Light border for the scrollable area */
+            border-radius: 8px;
+            background-color: #ffffff; /* White background for the list area */
+        }
+
+        /* Media query for larger screens to increase card size */
+        @media (min-width: 640px) { /* Tailwind's 'sm' breakpoint */
+            .pokemon-grid-container {
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Larger min-width for tablets/desktops */
+            }
+        }
+
+        /* Individual Pokémon card wrapper */
+        .pokemon-card-wrapper {
+            width: 100%; /* Take full width of grid cell */
+            max-width: 180px; /* Max width for individual card, prevents cards from becoming too wide on large screens */
+            margin-bottom: 0; /* Grid handles spacing */
+            display: block; /* Ensure it behaves as a block */
+        }
+
+        /* Adjustments for card content */
+        .pokemon-card-wrapper .card {
+            padding: 12px; /* Slightly less padding */
+            border-radius: 8px; /* More rounded corners */
+            background-color: #f9fafb; /* Lighter card background */
+            cursor: pointer;
+            height: 100%; /* Ensure all cards in a row have similar height */
+            display: flex; /* Use flexbox for internal alignment */
+            flex-direction: column; /* Stack elements vertically */
+            align-items: center; /* Center content horizontally */
+            justify-content: space-between; /* Distribute space */
+            text-align: center; /* Center text */
+        }
+
+        .pokemon-card-wrapper img {
+            width: 90px; /* Slightly smaller fixed size for Pokémon images */
+            height: 90px;
+            object-fit: contain;
+            margin: 0 auto 8px; /* Center image and add bottom margin */
+            display: block;
+            image-rendering: pixelated; /* For classic pixel art look */
+        }
+
+        /* Style for Pokémon name to handle long names */
+        .pokemon-card-wrapper .card h3.pokemon-name {
+            font-size: 1rem; /* Default font size */
+            word-break: break-word; /* Allow long words to break */
+            overflow-wrap: break-word; /* Ensure wrapping for long names */
+            line-height: 1.2; /* Adjust line height for better wrapping */
+            margin-bottom: 4px; /* Small margin below name */
+        }
+
+        /* Adjust font size for very long names on smaller screens if needed */
+        @media (max-width: 400px) { /* Example breakpoint for very small phones */
+            .pokemon-card-wrapper .card h3.pokemon-name {
+                font-size: 0.9rem; /* Slightly smaller font for very narrow screens */
+            }
+        }
+
+        /* Loading spinner styles */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #0d6efd; /* A nice blue color */
+            animation: spin 1s ease infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center py-8 px-4">
+
+    <div class="container mx-auto max-w-7xl w-full">
+        <!-- Header Section -->
+        <header class="text-center mb-8 bg-white p-6 rounded-xl shadow-md">
+            <h1 class="text-4xl font-extrabold text-gray-800 mb-2">Full Pokémon List</h1>
+            <p class="text-lg text-gray-600 mb-6">National Dex</p>
+
+            <!-- Search Bar -->
+            <form id="search-pokemons" onsubmit="return false;" class="mb-6 max-w-md mx-auto">
+                <input type="text" placeholder="Search by number or name..."
+                        class="w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg">
+            </form>
+
+            <!-- Game Version Selector -->
+            <div class="mb-6">
+                <label for="game-version-select" class="block text-gray-700 text-lg font-semibold mb-2">Select Game Version:</label>
+                <select id="game-version-select" class="w-full max-w-xs mx-auto block px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-base">
+                    <option value="red-blue">Red/Blue</option>
+                    <option value="yellow">Yellow</option>
+                    <option value="gold-silver">Gold/Silver</option>
+                    <option value="crystal">Crystal</option>
+                    <option value="ruby-sapphire">Ruby/Sapphire</option>
+                    <option value="emerald">Emerald</option>
+                    <option value="firered-leafgreen">FireRed/LeafGreen</option>
+                    <option value="diamond-pearl">Diamond/Pearl</option>
+                    <option value="platinum">Platinum</option>
+                    <option value="heartgold-soulsilver">HeartGold/SoulSilver</option>
+                    <option value="black-white">Black/White</option>
+                    <option value="black-2-white-2">Black 2/White 2</option>
+                    <option value="x-y">X/Y</option>
+                    <option value="omega-ruby-alpha-sapphire">Omega Ruby/Alpha Sapphire</option>
+                    <option value="sun-moon">Sun/Moon</option>
+                    <option value="ultra-sun-ultra-moon">Ultra Sun/Ultra Moon</option>
+                    <option value="lets-go-pikachu-lets-go-eevee">Let's Go Pikachu/Eevee</option>
+                    <option value="sword-shield">Sword/Shield</option>
+                    <option value="brilliant-diamond-shining-pearl">Brilliant Diamond/Shining Pearl</option>
+                    <option value="legends-arceus">Legends: Arceus</option>
+                    <option value="scarlet-violet">Scarlet/Violet</option>
+                    <!-- Add more game versions as needed -->
+                </select>
+            </div>
+
+            <!-- Generation Filter Menu -->
+            <div class="gen-menu flex flex-wrap justify-center gap-3">
+                <a class="filter-btn" data-min="1" data-max="151">1st Gen</a>
+                <a class="filter-btn" data-min="152" data-max="251">2nd Gen</a>
+                <a class="filter-btn" data-min="252" data-max="386">3rd Gen</a>
+                <a class="filter-btn" data-min="387" data-max="494">4th Gen</a>
+                <a class="filter-btn" data-min="495" data-max="649">5th Gen</a>
+                <a class="filter-btn" data-min="650" data-max="721">6th Gen</a>
+                <a class="filter-btn" data-min="722" data-max="809">7th Gen</a>
+                <a class="filter-btn" data-min="810" data-max="905">8th Gen</a>
+                <a class="filter-btn" data-min="906" data-max="1025">9th Gen</a>
+                <a class="filter-btn" data-min="1" data-max="1025">All Gens</a>
+            </div>
+        </header>
+
+        <!-- Pokémon List Grid -->
+        <div id="pokemon-grid-container" class="pokemon-grid-container bg-white rounded-xl shadow-md">
+            <!-- Pokémon cards will be dynamically loaded here by JavaScript -->
+            <div id="loading-spinner" class="spinner"></div>
+        </div> <!-- /pokemon-grid-container -->
+    </div> <!-- /container -->
+
+    <script>
+        // Global variable to store the selected game version
+        let selectedGameVersion = 'red-blue'; // Default version
+        let allPokemonData = []; // To store the fetched Pokémon data globally
+
+        /**
+         * Formats a Pokémon name or move name by replacing hyphens with spaces
+         * and capitalizing the first letter of each word.
+         * @param {string} name - The original name from the API.
+         * @returns {string} The formatted name.
+         */
+        function formatPokemonNameOrMoves(name) {
+            const nameWithSpaces = name.replace(/-/g, ' ');
+            return nameWithSpaces.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+
+        /**
+         * Clears the 'active' class from all generation filter buttons.
+         */
+        function clearGenFilterToggles() {
+            const genButtons = document.querySelectorAll('.gen-menu .filter-btn');
+            genButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+        }
+
+        /**
+         * Displays all Pokémon cards by setting their display style to 'block'.
+         */
+        function showAllPokemonCards() {
+            const pokemonWrappers = document.querySelectorAll('.pokemon-grid-container .pokemon-card-wrapper');
+            pokemonWrappers.forEach(function(wrapper) {
+                wrapper.style.display = 'block';
+            });
+        }
+
+        /**
+         * Toggles the generation filter based on min and max Pokémon IDs.
+         * @param {HTMLElement} clickedButton - The button element that was clicked.
+         * @param {number} min - The minimum Pokémon ID for the generation.
+         * @param {number} max - The maximum Pokémon ID for the generation.
+         */
+        function toggleGenFilter(clickedButton, min, max) {
+            const pokemonWrappers = document.querySelectorAll('.pokemon-grid-container .pokemon-card-wrapper');
+
+            // Check if the clicked button already has the 'active' class
+            if (clickedButton.classList.contains('active')) {
+                // If it does, remove the class and show all cards (clear filter)
+                clickedButton.classList.remove('active');
+                showAllPokemonCards();
+            } else {
+                // If it doesn't, first clear any existing 'active' classes from other buttons
+                clearGenFilterToggles();
+                // Then, add the 'active' class to the clicked button
+                clickedButton.classList.add('active');
+
+                // Now, apply the filter based on min and max
+                pokemonWrappers.forEach(function(wrapper) {
+                    const pokemonId = parseInt(wrapper.dataset.pokemonId, 10); // Get ID from data attribute
+
+                    if (pokemonId >= min && pokemonId <= max) {
+                        wrapper.style.display = 'block';
+                    } else {
+                        wrapper.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        /**
+         * Navigates to the details page for a specific Pokémon.
+         * The details page will be `details.html` and will receive the Pokémon ID
+         * and selected game version as query parameters.
+         * @param {number} pokemonId - The ID of the Pokémon to navigate to.
+         */
+        function navigateToDetails(pokemonId) {
+            // Note: If 'details.html' doesn't exist yet, this will result in a 404.
+            // You would need to create a details.html file that fetches and displays
+            // details for the given Pokémon ID and version.
+            window.location.href = `./details.html?id=${pokemonId}&version=${selectedGameVersion}`;
+        }
+
+        /**
+         * Renders the list of Pokémon cards into the grid container.
+         * @param {Array<Object>} pokemonList - An array of Pokémon objects from the API.
+         */
+        function renderPokemonList(pokemonList) {
+            const pokemonGridContainer = document.getElementById('pokemon-grid-container');
+            pokemonGridContainer.innerHTML = ''; // Clear existing content
+
+            if (!pokemonList || pokemonList.length === 0) {
+                pokemonGridContainer.innerHTML = '<p class="text-gray-600 text-center col-span-full">No Pokémon found.</p>';
+                return;
+            }
+
+            pokemonList.forEach((pokemon, index) => {
+                const pokemonId = index + 1; // Pokémon IDs are 1-based
+                const formattedPokemonName = formatPokemonNameOrMoves(pokemon.name);
+
+                const pokemonCardHtml = `
+                    <div id="pokemon-${pokemonId}" class="pokemon-card-wrapper" data-pokemon-id="${pokemonId}">
+                        <div class="card card-custom" onclick="navigateToDetails(${pokemonId})">
+                            <h3 class="text-lg font-bold text-gray-800 mb-1">#${pokemonId}</h3>
+                            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png" alt="${formattedPokemonName}" onerror="this.onerror=null;this.src='https://placehold.co/90x90/e0e0e0/ffffff?text=No+Image';">
+                            <h3 class="pokemon-name text-xl font-semibold text-gray-700 capitalize">${formattedPokemonName}</h3>
+                        </div>
+                    </div>
+                `;
+                pokemonGridContainer.insertAdjacentHTML('beforeend', pokemonCardHtml);
+            });
+        }
+
+        /**
+         * Fetches Pokémon data from the PokeAPI.
+         */
+        async function fetchPokemonData() {
+            const pokemonGridContainer = document.getElementById('pokemon-grid-container');
+            pokemonGridContainer.innerHTML = '<div id="loading-spinner" class="spinner"></div>'; // Show loading spinner
+
+            const url = 'https://pokeapi.co/api/v2/pokemon?limit=1025';
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                allPokemonData = data.results; // Store data globally
+                renderPokemonList(allPokemonData); // Render initial list
+            } catch (error) {
+                console.error("Error fetching Pokémon data:", error);
+                pokemonGridContainer.innerHTML = '<p class="text-red-600 text-center col-span-full">Failed to load Pokémon data. Please try again later.</p>';
+            }
+        }
+
+        // --- Event Listeners ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial selected game version from local storage if available, otherwise use default
+            const gameVersionSelect = document.getElementById('game-version-select');
+            const storedVersion = localStorage.getItem('selectedPokemonGameVersion');
+            if (storedVersion) {
+                selectedGameVersion = storedVersion;
+                gameVersionSelect.value = storedVersion;
+            }
+
+            // Save selected version to local storage on change
+            gameVersionSelect.addEventListener('change', (e) => {
+                selectedGameVersion = e.target.value;
+                localStorage.setItem('selectedPokemonGameVersion', selectedGameVersion);
+                console.log("Selected game version:", selectedGameVersion);
+            });
+
+            // Attach event listeners to generation filter buttons
+            const genButtons = document.querySelectorAll('.gen-menu .filter-btn');
+            genButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const min = parseInt(button.dataset.min, 10);
+                    const max = parseInt(button.dataset.max, 10);
+                    toggleGenFilter(button, min, max);
+                });
+            });
+
+            // Search bar functionality
+            const searchBar = document.forms['search-pokemons'].querySelector('input');
+            searchBar.addEventListener('keyup', function(e) {
+                const term = e.target.value.toLocaleLowerCase().trim();
+                const pokemonWrappers = document.querySelectorAll('.pokemon-grid-container .pokemon-card-wrapper');
+
+                // When typing in the search bar, clear the generation filter visual toggle
+                clearGenFilterToggles();
+
+                pokemonWrappers.forEach(function(wrapper) {
+                    const pokemonId = wrapper.dataset.pokemonId;
+                    // Find the original name from allPokemonData using the ID
+                    const pokemon = allPokemonData[pokemonId - 1]; // IDs are 1-based, array is 0-based
+
+                    if (!pokemon) {
+                        wrapper.style.display = 'none'; // Hide if data is somehow missing
+                        return;
+                    }
+
+                    const name = pokemon.name; // Original name from API
+                    const formattedNameForSearch = name.replace(/-/g, ' ').toLocaleLowerCase(); // For searching "maushold family"
+                    const displayPokemonName = wrapper.querySelector('.pokemon-name').textContent.toLocaleLowerCase(); // The name as displayed
+
+                    if (pokemonId.includes(term) || name.toLowerCase().includes(term) || formattedNameForSearch.includes(term) || displayPokemonName.includes(term)) {
+                        wrapper.style.display = 'block';
+                    } else {
+                        wrapper.style.display = 'none';
+                    }
+                });
+            });
+
+            // Initial fetch and rendering of Pokémon data
+            fetchPokemonData();
+        });
+    </script>
+
+</body>
+</html>
