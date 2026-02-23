@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PKDex - Pokémons e TM/HM</title>
+  <title>PKDex - Pokémon and TM/HM</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -50,11 +50,11 @@
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p class="text-sm uppercase tracking-[0.2em] text-blue-600 font-bold">PKDex</p>
-            <h1 class="text-2xl md:text-4xl font-black text-slate-900">Pokédex completa + Guia TM/HM</h1>
-            <p class="text-slate-600 mt-2 text-sm md:text-base">Dados dinâmicos por versão de jogo.</p>
+            <h1 class="text-2xl md:text-4xl font-black text-slate-900">Complete Pokédex + TM/HM Guide</h1>
+            <p class="text-slate-600 mt-2 text-sm md:text-base">Dynamic data by game version.</p>
           </div>
           <div class="w-full md:w-80">
-            <label for="game-version-select" class="block text-sm font-semibold text-slate-600 mb-2">Versão do jogo</label>
+            <label for="game-version-select" class="block text-sm font-semibold text-slate-600 mb-2">Game version</label>
             <select id="game-version-select" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="red-blue">Red/Blue</option>
               <option value="yellow">Yellow</option>
@@ -81,8 +81,8 @@
           </div>
         </div>
 
-        <nav class="flex flex-wrap gap-2" aria-label="Abas principais">
-          <button type="button" data-tab="pokemon" class="tab-btn rounded-full px-5 py-2.5 text-sm font-semibold bg-blue-600 text-white shadow">Pokémons</button>
+        <nav class="flex flex-wrap gap-2" aria-label="Main tabs">
+          <button type="button" data-tab="pokemon" class="tab-btn rounded-full px-5 py-2.5 text-sm font-semibold bg-blue-600 text-white shadow">Pokémon</button>
           <button type="button" data-tab="tmhm" class="tab-btn rounded-full px-5 py-2.5 text-sm font-semibold bg-slate-100 text-slate-700">TM/HM</button>
         </nav>
       </header>
@@ -90,10 +90,10 @@
       <section id="pokemon-tab" class="tab-panel pt-6 space-y-5">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <form id="pokemon-search-form" class="w-full md:max-w-lg">
-            <label for="pokemon-search" class="block text-sm font-semibold text-slate-600 mb-2">Buscar por nome ou número</label>
+            <label for="pokemon-search" class="block text-sm font-semibold text-slate-600 mb-2">Search by name or number</label>
             <input id="pokemon-search" type="search" placeholder="Ex.: pikachu, 25, mr mime" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </form>
-          <p id="pokemon-count" class="text-sm font-semibold text-slate-600">Carregando Pokémons...</p>
+          <p id="pokemon-count" class="text-sm font-semibold text-slate-600">Loading Pokémon...</p>
         </div>
 
         <div id="gen-menu" class="flex flex-wrap gap-2"></div>
@@ -106,14 +106,14 @@
       <section id="tmhm-tab" class="tab-panel pt-6 space-y-5 hidden">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <form id="tmhm-search-form" class="w-full md:max-w-lg">
-            <label for="tmhm-search" class="block text-sm font-semibold text-slate-600 mb-2">Buscar TM/HM ou movimento</label>
+            <label for="tmhm-search" class="block text-sm font-semibold text-slate-600 mb-2">Search TM/HM or move</label>
             <input id="tmhm-search" type="search" placeholder="Ex.: tm10, surf, thunderbolt" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </form>
-          <p id="tmhm-count" class="text-sm font-semibold text-slate-600">Escolha uma versão para listar TM/HM.</p>
+          <p id="tmhm-count" class="text-sm font-semibold text-slate-600">Pick a version to list TM/HM.</p>
         </div>
 
         <div id="tmhm-list" class="grid gap-3 md:gap-4">
-          <div class="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-6 text-sm text-slate-600">Carregando dados de TM/HM...</div>
+          <div class="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-6 text-sm text-slate-600">Loading TM/HM data...</div>
         </div>
       </section>
     </section>
@@ -135,16 +135,16 @@
     };
 
     const generationRanges = [
-      { label: '1ª Gen', min: 1, max: 151 },
-      { label: '2ª Gen', min: 152, max: 251 },
-      { label: '3ª Gen', min: 252, max: 386 },
-      { label: '4ª Gen', min: 387, max: 493 },
-      { label: '5ª Gen', min: 494, max: 649 },
-      { label: '6ª Gen', min: 650, max: 721 },
-      { label: '7ª Gen', min: 722, max: 809 },
-      { label: '8ª Gen', min: 810, max: 905 },
-      { label: '9ª Gen', min: 906, max: 1025 },
-      { label: 'Todas', min: 1, max: 1025 },
+      { label: 'Gen 1', min: 1, max: 151 },
+      { label: 'Gen 2', min: 152, max: 251 },
+      { label: 'Gen 3', min: 252, max: 386 },
+      { label: 'Gen 4', min: 387, max: 493 },
+      { label: 'Gen 5', min: 494, max: 649 },
+      { label: 'Gen 6', min: 650, max: 721 },
+      { label: 'Gen 7', min: 722, max: 809 },
+      { label: 'Gen 8', min: 810, max: 905 },
+      { label: 'Gen 9', min: 906, max: 1025 },
+      { label: 'All', min: 1, max: 1025 },
     ];
 
     const refs = {
@@ -224,8 +224,8 @@
 
     function renderPokemonGrid() {
       if (!state.pokemonFiltered.length) {
-        refs.pokemonGrid.innerHTML = '<p class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-600">Nenhum Pokémon encontrado com os filtros atuais.</p>';
-        refs.pokemonCount.textContent = '0 resultados';
+        refs.pokemonGrid.innerHTML = '<p class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-600">No Pokémon found with the current filters.</p>';
+        refs.pokemonCount.textContent = '0 results';
         return;
       }
 
@@ -238,21 +238,21 @@
           </article>`)
         .join('');
 
-      refs.pokemonCount.textContent = `${state.pokemonFiltered.length} Pokémon(s)`;
+      refs.pokemonCount.textContent = `${state.pokemonFiltered.length} Pokémon`;
     }
 
     async function fetchPokemonData() {
       refs.pokemonGrid.innerHTML = '<div class="col-span-full py-12 flex justify-center"><div class="spinner"></div></div>';
       try {
         const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1025');
-        if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
         const data = await response.json();
         state.pokemon = data.results.map((entry, index) => ({ id: index + 1, name: entry.name }));
         applyPokemonFilters();
       } catch (error) {
-        console.error('Erro ao carregar Pokémons:', error);
-        refs.pokemonGrid.innerHTML = '<p class="col-span-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-sm text-red-700">Falha ao carregar lista de Pokémons. Tente novamente mais tarde.</p>';
-        refs.pokemonCount.textContent = 'Erro ao carregar';
+        console.error('Failed to load Pokémon:', error);
+        refs.pokemonGrid.innerHTML = '<p class="col-span-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-sm text-red-700">Failed to load the Pokémon list. Please try again later.</p>';
+        refs.pokemonCount.textContent = 'Load error';
       }
     }
 
@@ -262,7 +262,7 @@
       }
 
       const response = await fetch(machineUrl);
-      if (!response.ok) throw new Error(`Erro ao buscar machine: ${response.status}`);
+      if (!response.ok) throw new Error(`Error fetching machine: ${response.status}`);
       const machineData = await response.json();
       state.cache.machineByUrl.set(machineUrl, machineData);
       return machineData;
@@ -274,23 +274,29 @@
       }
 
       const response = await fetch('https://pokeapi.co/api/v2/item-category/tmhs');
-      if (!response.ok) throw new Error(`Erro ao carregar categoria TM/HM: ${response.status}`);
+      if (!response.ok) throw new Error(`Error loading TM/HM category: ${response.status}`);
       const category = await response.json();
 
-      const itemDetails = await Promise.all(
-        category.items.map(async (item) => {
+      const itemDetails = [];
+      for (const item of category.items) {
+        try {
           const itemResponse = await fetch(item.url);
-          if (!itemResponse.ok) throw new Error(`Erro ao carregar item ${item.name}: ${itemResponse.status}`);
-          return itemResponse.json();
-        })
-      );
+          if (!itemResponse.ok) {
+            console.warn(`Skipping item ${item.name}: ${itemResponse.status}`);
+            continue;
+          }
+          itemDetails.push(await itemResponse.json());
+        } catch (error) {
+          console.warn(`Skipping item ${item.name}:`, error);
+        }
+      }
 
       state.cache.tmhmItems = itemDetails;
       return itemDetails;
     }
 
     async function fetchTmHmByVersion(versionGroup) {
-      refs.tmhmCount.textContent = 'Carregando TM/HM...';
+      refs.tmhmCount.textContent = 'Loading TM/HM...';
       refs.tmhmList.innerHTML = '<div class="rounded-2xl border border-slate-200 bg-white p-6"><div class="spinner mx-auto"></div></div>';
 
       try {
@@ -301,12 +307,12 @@
           const matchingMachines = (item.machines || []).filter((machineRef) => machineRef.version_group.name === versionGroup);
 
           for (const machineRef of matchingMachines) {
-            let moveName = 'Movimento desconhecido';
+            let moveName = 'Unknown move';
             try {
               const machineData = await fetchMachineDetail(machineRef.machine.url);
               moveName = machineData.move?.name || moveName;
             } catch (error) {
-              console.warn('Falha ao buscar detalhe de machine:', error);
+              console.warn('Failed to fetch machine details:', error);
             }
 
             const isHm = item.name.startsWith('hm');
@@ -314,7 +320,7 @@
               itemName: item.name,
               moveName,
               type: isHm ? 'HM' : 'TM',
-              location: 'Localização específica não está disponível na PokeAPI para TM/HM nesta versão.',
+              location: 'Specific location data is not available in PokéAPI for TM/HM in this version.',
             });
           }
         }
@@ -323,9 +329,9 @@
         state.tmhm = tmhmEntries;
         applyTmHmFilters();
       } catch (error) {
-        console.error('Erro ao carregar TM/HM:', error);
-        refs.tmhmCount.textContent = 'Erro ao carregar TM/HM';
-        refs.tmhmList.innerHTML = '<div class="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">Não foi possível carregar TM/HM da versão selecionada no momento.</div>';
+        console.error('Error loading TM/HM:', error);
+        refs.tmhmCount.textContent = 'TM/HM load error';
+        refs.tmhmList.innerHTML = '<div class="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">Could not load TM/HM for the selected version at the moment.</div>';
       }
     }
 
@@ -343,8 +349,8 @@
 
     function renderTmHmList() {
       if (!state.tmhmFiltered.length) {
-        refs.tmhmList.innerHTML = '<div class="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600">Nenhuma TM/HM encontrada para essa versão com o filtro aplicado.</div>';
-        refs.tmhmCount.textContent = '0 resultados';
+        refs.tmhmList.innerHTML = '<div class="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600">No TM/HM found for this version with the current filter.</div>';
+        refs.tmhmCount.textContent = '0 results';
         return;
       }
 
@@ -355,12 +361,12 @@
               <span class="inline-flex items-center rounded-full ${entry.type === 'HM' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-700'} px-2.5 py-1 text-xs font-black">${entry.type}</span>
               <h3 class="text-base md:text-lg font-bold text-slate-800">${formatLabel(entry.itemName)}</h3>
             </div>
-            <p class="text-sm text-slate-700"><span class="font-semibold">Movimento:</span> ${formatLabel(entry.moveName)}</p>
-            <p class="text-sm text-slate-600 mt-1"><span class="font-semibold">Localização:</span> ${entry.location}</p>
+            <p class="text-sm text-slate-700"><span class="font-semibold">Move:</span> ${formatLabel(entry.moveName)}</p>
+            <p class="text-sm text-slate-600 mt-1"><span class="font-semibold">Location:</span> ${entry.location}</p>
           </article>`)
         .join('');
 
-      refs.tmhmCount.textContent = `${state.tmhmFiltered.length} TM/HM encontradas em ${formatLabel(state.selectedGameVersion)}`;
+      refs.tmhmCount.textContent = `${state.tmhmFiltered.length} TM/HM found in ${formatLabel(state.selectedGameVersion)}`;
     }
 
     function setupEvents() {
