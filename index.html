@@ -129,7 +129,7 @@
       tmhmFiltered: [],
       activeTab: 'pokemon',
       cache: {
-        tmhmItems: null,
+        machineRefs: null,
         machineByUrl: new Map(),
       },
     };
@@ -268,31 +268,24 @@
       return machineData;
     }
 
-    async function fetchTmHmItems() {
-      if (state.cache.tmhmItems) {
-        return state.cache.tmhmItems;
+    async function fetchAllMachineRefs() {
+      if (state.cache.machineRefs) {
+        return state.cache.machineRefs;
       }
 
-      const response = await fetch('https://pokeapi.co/api/v2/item-category/tmhs');
-      if (!response.ok) throw new Error(`Error loading TM/HM category: ${response.status}`);
-      const category = await response.json();
+      const machineRefs = [];
+      let nextUrl = 'https://pokeapi.co/api/v2/machine?limit=100';
 
-      const itemDetails = [];
-      for (const item of category.items) {
-        try {
-          const itemResponse = await fetch(item.url);
-          if (!itemResponse.ok) {
-            console.warn(`Skipping item ${item.name}: ${itemResponse.status}`);
-            continue;
-          }
-          itemDetails.push(await itemResponse.json());
-        } catch (error) {
-          console.warn(`Skipping item ${item.name}:`, error);
-        }
+      while (nextUrl) {
+        const response = await fetch(nextUrl);
+        if (!response.ok) throw new Error(`Error loading machines list: ${response.status}`);
+        const page = await response.json();
+        machineRefs.push(...page.results);
+        nextUrl = page.next;
       }
 
-      state.cache.tmhmItems = itemDetails;
-      return itemDetails;
+      state.cache.machineRefs = machineRefs;
+      return machineRefs;
     }
 
     async function fetchTmHmByVersion(versionGroup) {
@@ -300,28 +293,30 @@
       refs.tmhmList.innerHTML = '<div class="rounded-2xl border border-slate-200 bg-white p-6"><div class="spinner mx-auto"></div></div>';
 
       try {
-        const items = await fetchTmHmItems();
+        const machineRefs = await fetchAllMachineRefs();
         const tmhmEntries = [];
 
-        for (const item of items) {
-          const matchingMachines = (item.machines || []).filter((machineRef) => machineRef.version_group.name === versionGroup);
-
-          for (const machineRef of matchingMachines) {
-            let moveName = 'Unknown move';
-            try {
-              const machineData = await fetchMachineDetail(machineRef.machine.url);
-              moveName = machineData.move?.name || moveName;
-            } catch (error) {
-              console.warn('Failed to fetch machine details:', error);
+        for (const machineRef of machineRefs) {
+          try {
+            const machineData = await fetchMachineDetail(machineRef.url);
+            const itemName = machineData.item?.name;
+            if (!itemName || (!itemName.startsWith('tm') && !itemName.startsWith('hm'))) {
+              continue;
             }
 
-            const isHm = item.name.startsWith('hm');
+            if (machineData.version_group?.name !== versionGroup) {
+              continue;
+            }
+
+            const isHm = itemName.startsWith('hm');
             tmhmEntries.push({
-              itemName: item.name,
-              moveName,
+              itemName,
+              moveName: machineData.move?.name || 'Unknown move',
               type: isHm ? 'HM' : 'TM',
               location: 'Specific location data is not available in PokéAPI for TM/HM in this version.',
             });
+          } catch (error) {
+            console.warn('Failed to fetch machine details:', error);
           }
         }
 
