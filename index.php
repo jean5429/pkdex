@@ -22,6 +22,7 @@ if ($selectedGen !== 'all' && !array_key_exists($selectedGen, $generationFilters
 }
 
 $pokemon = $repository->listPokemon($search);
+$tmhmPokemon = $repository->listPokemonTmHm($search);
 $initialPokemonCount = 24;
 $initialPokemon = array_slice($pokemon, 0, $initialPokemonCount);
 $deferredPokemon = array_slice($pokemon, $initialPokemonCount);
@@ -43,6 +44,11 @@ $palette = pkdexGameVersionPalette();
         <h1 class="text-3xl font-black">Pokédex from local database</h1>
         <p class="text-slate-600 mt-2">Data is loaded from MySQL for fast responses and reduced PokeAPI traffic.</p>
     </header>
+
+    <section class="mb-4 flex gap-2 bg-white rounded-xl p-3 shadow-sm border border-slate-200" id="content-tabs">
+        <button type="button" data-tab="pokemon" class="tab-btn rounded-lg px-3 py-2 text-sm font-semibold bg-blue-600 text-white">Pokémon</button>
+        <button type="button" data-tab="tmhm" class="tab-btn rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-800 hover:bg-slate-200">TM / HM</button>
+    </section>
 
     <section class="mb-4 flex flex-wrap gap-2 bg-white rounded-xl p-4 shadow-sm border border-slate-200" id="gen-filters">
         <?php foreach ($generationFilters as $label => $range): ?>
@@ -86,22 +92,58 @@ $palette = pkdexGameVersionPalette();
             No Pokémon found in the database. Run <code>php update_database.php</code> first.
         </section>
     <?php else: ?>
-        <section id="pokemon-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <?php foreach ($initialPokemon as $entry): ?>
-                <a
-                    href="details.php?id=<?= (int) $entry['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>"
-                    class="pokemon-card bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition"
-                    data-pokemon-id="<?= (int) $entry['pokemon_id'] ?>"
-                    data-name="<?= htmlspecialchars(strtolower((string) $entry['name'])) ?>"
-                >
-                    <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="w-24 h-24 mx-auto" loading="lazy">
-                    <p class="text-xs text-slate-500 text-center">#<?= (int) $entry['pokemon_id'] ?></p>
-                    <h2 class="font-bold text-center capitalize"><?= htmlspecialchars((string) $entry['name']) ?></h2>
-                    <p class="text-xs text-center mt-1 text-slate-500"><?= htmlspecialchars(implode(', ', $entry['types'])) ?></p>
-                </a>
-            <?php endforeach; ?>
+        <section id="pokemon-panel" class="tab-panel">
+            <section id="pokemon-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <?php foreach ($initialPokemon as $entry): ?>
+                    <a
+                        href="details.php?id=<?= (int) $entry['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>"
+                        class="pokemon-card bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition"
+                        data-pokemon-id="<?= (int) $entry['pokemon_id'] ?>"
+                        data-name="<?= htmlspecialchars(strtolower((string) $entry['name'])) ?>"
+                    >
+                        <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="w-24 h-24 mx-auto" loading="lazy">
+                        <p class="text-xs text-slate-500 text-center">#<?= (int) $entry['pokemon_id'] ?></p>
+                        <h2 class="font-bold text-center capitalize"><?= htmlspecialchars((string) $entry['name']) ?></h2>
+                        <p class="text-xs text-center mt-1 text-slate-500"><?= htmlspecialchars(implode(', ', $entry['types'])) ?></p>
+                    </a>
+                <?php endforeach; ?>
+            </section>
+            <p id="pokemon-empty-message" class="hidden mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No Pokémon match the current filters.</p>
         </section>
-        <p id="pokemon-empty-message" class="hidden mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No Pokémon match the current filters.</p>
+
+        <section id="tmhm-panel" class="tab-panel hidden">
+            <?php if ($tmhmPokemon === []): ?>
+                <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM data found. Re-run <code>php update_database.php</code> to sync machine data.</p>
+            <?php else: ?>
+                <section id="tmhm-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <?php foreach ($tmhmPokemon as $entry): ?>
+                        <?php $versions = array_keys($entry['tmhm']); ?>
+                        <article
+                            class="tmhm-card bg-white rounded-xl border border-slate-200 p-4 shadow-sm"
+                            data-pokemon-id="<?= (int) $entry['pokemon_id'] ?>"
+                            data-name="<?= htmlspecialchars(strtolower((string) $entry['name'])) ?>"
+                            data-versions="<?= htmlspecialchars(implode(',', $versions)) ?>"
+                        >
+                            <div class="flex items-center gap-3 mb-3">
+                                <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="w-14 h-14" loading="lazy">
+                                <div>
+                                    <p class="text-xs text-slate-500">#<?= (int) $entry['pokemon_id'] ?></p>
+                                    <h2 class="font-bold capitalize"><?= htmlspecialchars((string) $entry['name']) ?></h2>
+                                    <p class="text-xs text-slate-500"><?= htmlspecialchars(implode(', ', $entry['types'])) ?></p>
+                                </div>
+                            </div>
+                            <?php foreach ($entry['tmhm'] as $version => $moves): ?>
+                                <div class="mb-2">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500"><?= htmlspecialchars(pkdexFormatGameVersionLabel((string) $version)) ?></p>
+                                    <p class="text-sm text-slate-700"><?= htmlspecialchars(implode(', ', $moves)) ?></p>
+                                </div>
+                            <?php endforeach; ?>
+                        </article>
+                    <?php endforeach; ?>
+                </section>
+                <p id="tmhm-filter-empty-message" class="hidden mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM entries match the current filters.</p>
+            <?php endif; ?>
+        </section>
     <?php endif; ?>
 </main>
 <script>
@@ -110,8 +152,13 @@ $palette = pkdexGameVersionPalette();
     const searchInput = document.getElementById('search');
     const versionSelect = document.getElementById('version');
     const genButtons = document.querySelectorAll('.gen-filter-btn');
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const pokemonPanel = document.getElementById('pokemon-panel');
+    const tmhmPanel = document.getElementById('tmhm-panel');
     const grid = document.getElementById('pokemon-grid');
+    const tmhmGrid = document.getElementById('tmhm-grid');
     const emptyMessage = document.getElementById('pokemon-empty-message');
+    const tmhmFilterEmptyMessage = document.getElementById('tmhm-filter-empty-message');
     const deferredPokemon = <?= json_encode(array_map(static function (array $entry): array {
         return [
             'pokemonId' => (int) $entry['pokemon_id'],
@@ -122,9 +169,14 @@ $palette = pkdexGameVersionPalette();
     }, $deferredPokemon), JSON_THROW_ON_ERROR) ?>;
 
     let activeGen = <?= json_encode($selectedGen, JSON_THROW_ON_ERROR) ?>;
+    let activeTab = 'pokemon';
 
     function getCards() {
         return grid ? Array.from(grid.querySelectorAll('.pokemon-card')) : [];
+    }
+
+    function getTmhmCards() {
+        return tmhmGrid ? Array.from(tmhmGrid.querySelectorAll('.tmhm-card')) : [];
     }
 
     function buildPokemonCard(entry) {
@@ -200,6 +252,24 @@ $palette = pkdexGameVersionPalette();
         });
     }
 
+    function setActiveTab() {
+        tabButtons.forEach((button) => {
+            const isActive = button.dataset.tab === activeTab;
+            button.classList.toggle('bg-blue-600', isActive);
+            button.classList.toggle('text-white', isActive);
+            button.classList.toggle('bg-slate-100', !isActive);
+            button.classList.toggle('text-slate-800', !isActive);
+            button.classList.toggle('hover:bg-slate-200', !isActive);
+        });
+
+        if (pokemonPanel) {
+            pokemonPanel.classList.toggle('hidden', activeTab !== 'pokemon');
+        }
+        if (tmhmPanel) {
+            tmhmPanel.classList.toggle('hidden', activeTab !== 'tmhm');
+        }
+    }
+
     function updateDetailsLinkVersion(card) {
         const url = new URL(card.href, window.location.origin);
         if (versionSelect.value) {
@@ -216,30 +286,50 @@ $palette = pkdexGameVersionPalette();
         const minId = selectedButton && selectedButton.dataset.minId ? Number(selectedButton.dataset.minId) : null;
         const maxId = selectedButton && selectedButton.dataset.maxId ? Number(selectedButton.dataset.maxId) : null;
 
-        let visibleCount = 0;
-
-        const cards = getCards();
-
-        cards.forEach((card) => {
+        let visiblePokemon = 0;
+        getCards().forEach((card) => {
             const pokemonId = Number(card.dataset.pokemonId);
             const name = card.dataset.name || '';
             const matchesSearch = searchTerm === '' || name.includes(searchTerm) || String(pokemonId) === searchTerm;
             const matchesGen = activeGen === 'all' || (minId !== null && maxId !== null && pokemonId >= minId && pokemonId <= maxId);
             const isVisible = matchesSearch && matchesGen;
-
             card.classList.toggle('hidden', !isVisible);
-
             if (isVisible) {
-                visibleCount += 1;
+                visiblePokemon += 1;
             }
-
             updateDetailsLinkVersion(card);
         });
 
         if (emptyMessage) {
-            emptyMessage.classList.toggle('hidden', visibleCount > 0);
+            emptyMessage.classList.toggle('hidden', visiblePokemon > 0);
+        }
+
+        let visibleTmhm = 0;
+        getTmhmCards().forEach((card) => {
+            const pokemonId = Number(card.dataset.pokemonId);
+            const name = card.dataset.name || '';
+            const versions = (card.dataset.versions || '').split(',').filter(Boolean);
+            const matchesSearch = searchTerm === '' || name.includes(searchTerm) || String(pokemonId) === searchTerm;
+            const matchesGen = activeGen === 'all' || (minId !== null && maxId !== null && pokemonId >= minId && pokemonId <= maxId);
+            const matchesVersion = versionSelect.value === '' || versions.includes(versionSelect.value);
+            const isVisible = matchesSearch && matchesGen && matchesVersion;
+            card.classList.toggle('hidden', !isVisible);
+            if (isVisible) {
+                visibleTmhm += 1;
+            }
+        });
+
+        if (tmhmFilterEmptyMessage) {
+            tmhmFilterEmptyMessage.classList.toggle('hidden', visibleTmhm > 0);
         }
     }
+
+    tabButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            activeTab = button.dataset.tab || 'pokemon';
+            setActiveTab();
+        });
+    });
 
     genButtons.forEach((button) => {
         button.addEventListener('click', () => {
@@ -253,6 +343,7 @@ $palette = pkdexGameVersionPalette();
     versionSelect.addEventListener('change', applyFilters);
     form.addEventListener('submit', (event) => event.preventDefault());
 
+    setActiveTab();
     setActiveGenButton();
     applyFilters();
     appendDeferredPokemon();

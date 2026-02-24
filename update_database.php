@@ -68,10 +68,17 @@ $locationStmt = $pdo->prepare(
      ON DUPLICATE KEY UPDATE max_chance = VALUES(max_chance)'
 );
 
+$tmhmStmt = $pdo->prepare(
+    'INSERT INTO pokemon_tmhm (pokemon_id, move_name, machine_name, game_version)
+     VALUES (:pokemon_id, :move_name, :machine_name, :game_version)
+     ON DUPLICATE KEY UPDATE machine_name = VALUES(machine_name)'
+);
+
 $deleteTypesStmt = $pdo->prepare('DELETE FROM pokemon_types WHERE pokemon_id = :pokemon_id');
 $deleteStatsStmt = $pdo->prepare('DELETE FROM pokemon_stats WHERE pokemon_id = :pokemon_id');
 $deleteMovesStmt = $pdo->prepare('DELETE FROM pokemon_moves WHERE pokemon_id = :pokemon_id');
 $deleteLocationsStmt = $pdo->prepare('DELETE FROM pokemon_locations WHERE pokemon_id = :pokemon_id');
+$deleteTmhmStmt = $pdo->prepare('DELETE FROM pokemon_tmhm WHERE pokemon_id = :pokemon_id');
 
 $evolutionDeleteStmt = $pdo->prepare('DELETE FROM pokemon_evolutions WHERE evolution_chain_id = :chain_id');
 $evolutionInsertStmt = $pdo->prepare(
@@ -86,7 +93,8 @@ $evolutionInsertStmt = $pdo->prepare(
 $total = count($listResponse['results']);
 $processed = 0;
 $processedEvolutionChains = [];
-
+$moveMachineCache = [];
+$machineItemCache = [];
 
 echo sprintf("Starting sync from Pokédex #%d (API offset %d) with limit %d.\n", $startFrom, $apiOffset, $limit);
 
@@ -143,6 +151,52 @@ foreach ($listResponse['results'] as $item) {
                     ':learn_method' => (string) ($detail['move_learn_method']['name'] ?? 'unknown'),
                     ':level_learned_at' => (int) ($detail['level_learned_at'] ?? 0),
                     ':game_version' => (string) ($detail['version_group']['name'] ?? 'unknown'),
+                ]);
+            }
+        }
+
+
+        $deleteTmhmStmt->execute([':pokemon_id' => $pokemonId]);
+        foreach (($pokemonData['moves'] ?? []) as $move) {
+            $moveName = (string) ($move['move']['name'] ?? '');
+            $moveUrl = (string) ($move['move']['url'] ?? '');
+            if ($moveName === '' || $moveUrl === '') {
+                continue;
+            }
+
+            if (!isset($moveMachineCache[$moveUrl])) {
+                $moveMachineCache[$moveUrl] = apiGet($moveUrl);
+            }
+
+            $moveData = $moveMachineCache[$moveUrl];
+            foreach (($moveData['machines'] ?? []) as $machineData) {
+                if (!is_array($machineData)) {
+                    continue;
+                }
+
+                $machineUrl = isset($machineData['machine']['url']) ? (string) $machineData['machine']['url'] : '';
+                $versionGroup = isset($machineData['version_group']['name']) ? (string) $machineData['version_group']['name'] : '';
+
+                if ($machineUrl === '' || $versionGroup === '') {
+                    continue;
+                }
+
+                if (!isset($machineItemCache[$machineUrl])) {
+                    $machineItemCache[$machineUrl] = apiGet($machineUrl);
+                }
+
+                $machineDetails = $machineItemCache[$machineUrl];
+                $machineName = isset($machineDetails['item']['name']) ? (string) $machineDetails['item']['name'] : '';
+
+                if ($machineName === '' || !preg_match('/^(tm|hm)-?\d+/i', $machineName)) {
+                    continue;
+                }
+
+                $tmhmStmt->execute([
+                    ':pokemon_id' => $pokemonId,
+                    ':move_name' => $moveName,
+                    ':machine_name' => strtoupper(str_replace('-', '', $machineName)),
+                    ':game_version' => $versionGroup,
                 ]);
             }
         }
