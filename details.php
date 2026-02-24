@@ -32,16 +32,35 @@ if ($pokemon !== null) {
 }
 
 $currentMoves = [];
+$movesByMethod = [];
 if ($selectedVersion !== '' && isset($pokemon['moves'][$selectedVersion])) {
-    $currentMoves = array_values(array_filter(
-        $pokemon['moves'][$selectedVersion],
-        static fn (array $move): bool => (string) $move['method'] === $selectedMethod
-    ));
+    $movesByMethod = [
+        'level-up' => [],
+        'machine' => [],
+    ];
+
+    foreach ($pokemon['moves'][$selectedVersion] as $move) {
+        $method = (string) $move['method'];
+        if (!isset($movesByMethod[$method])) {
+            continue;
+        }
+
+        $movesByMethod[$method][] = $move;
+    }
+
+    $currentMoves = $movesByMethod[$selectedMethod] ?? [];
 }
 
 $currentLocations = [];
 if ($selectedVersion !== '' && isset($pokemon['locations'][$selectedVersion])) {
     $currentLocations = $pokemon['locations'][$selectedVersion];
+}
+
+if ($movesByMethod === []) {
+    $movesByMethod = [
+        'level-up' => [],
+        'machine' => [],
+    ];
 }
 
 $typeChart = [
@@ -255,9 +274,9 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="flex items-center justify-center gap-2 md:ml-auto">
-                            <a href="details.php?id=<?= (int) $pokemon['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>&method=level-up" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">Level Up</a>
-                            <a href="details.php?id=<?= (int) $pokemon['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>&method=machine" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'machine' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">TM/HM</a>
+                        <div class="flex items-center justify-center gap-2 md:ml-auto" id="move-method-switcher">
+                            <button type="button" data-method="level-up" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">Level Up</button>
+                            <button type="button" data-method="machine" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'machine' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">TM/HM</button>
                         </div>
                     </div>
                 </form>
@@ -267,10 +286,10 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                         <thead>
                         <tr class="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-700">
                             <th class="px-4 py-3">Move name</th>
-                            <th class="px-4 py-3"><?= $selectedMethod === 'level-up' ? 'Learned at' : 'Method' ?></th>
+                            <th class="px-4 py-3" id="moves-secondary-header"><?= $selectedMethod === 'level-up' ? 'Learned at' : 'Method' ?></th>
                         </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="moves-table-body">
                         <?php if ($currentMoves === []): ?>
                             <tr>
                                 <td colspan="2" class="px-4 py-4 text-slate-500">No moves for this method/version combination.</td>
@@ -310,5 +329,78 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
         </section>
     <?php endif; ?>
 </main>
+<?php if ($pokemon !== null): ?>
+    <script>
+        (() => {
+            const moveDataByMethod = <?= json_encode($movesByMethod, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+            const moveTableBody = document.getElementById('moves-table-body');
+            const secondaryHeader = document.getElementById('moves-secondary-header');
+            const methodSwitcher = document.getElementById('move-method-switcher');
+            const methodInput = document.querySelector('input[name="method"]');
+
+            if (!moveTableBody || !secondaryHeader || !methodSwitcher || !methodInput) {
+                return;
+            }
+
+            const renderMoves = (method) => {
+                const moves = Array.isArray(moveDataByMethod[method]) ? moveDataByMethod[method] : [];
+                secondaryHeader.textContent = method === 'level-up' ? 'Learned at' : 'Method';
+                moveTableBody.innerHTML = '';
+
+                if (moves.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 2;
+                    cell.className = 'px-4 py-4 text-slate-500';
+                    cell.textContent = 'No moves for this method/version combination.';
+                    row.appendChild(cell);
+                    moveTableBody.appendChild(row);
+                    return;
+                }
+
+                moves.forEach((move) => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-t border-slate-200';
+
+                    const moveCell = document.createElement('td');
+                    moveCell.className = 'px-4 py-3 font-medium capitalize';
+                    moveCell.textContent = String(move.name ?? '').replaceAll('-', ' ');
+
+                    const detailCell = document.createElement('td');
+                    detailCell.className = 'px-4 py-3';
+                    detailCell.textContent = method === 'level-up'
+                        ? String(Number(move.level ?? 0))
+                        : String(move.method ?? '').replaceAll('-', ' ');
+
+                    row.appendChild(moveCell);
+                    row.appendChild(detailCell);
+                    moveTableBody.appendChild(row);
+                });
+            };
+
+            const setActiveMethod = (method) => {
+                methodInput.value = method;
+                renderMoves(method);
+
+                methodSwitcher.querySelectorAll('button[data-method]').forEach((button) => {
+                    const isActive = button.dataset.method === method;
+                    button.classList.toggle('bg-slate-100', isActive);
+                    button.classList.toggle('text-slate-900', isActive);
+                    button.classList.toggle('shadow-sm', isActive);
+                    button.classList.toggle('text-slate-600', !isActive);
+                    button.classList.toggle('hover:bg-slate-200', !isActive);
+                });
+            };
+
+            methodSwitcher.querySelectorAll('button[data-method]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    setActiveMethod(button.dataset.method || 'level-up');
+                });
+            });
+
+            setActiveMethod(methodInput.value || 'level-up');
+        })();
+    </script>
+<?php endif; ?>
 </body>
 </html>
