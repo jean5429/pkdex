@@ -14,6 +14,9 @@ if ($schemaSql === false) {
 
 $pdo->exec($schemaSql);
 
+// Lightweight compatibility migration for existing installations.
+$pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS sprite_shiny_url VARCHAR(255) DEFAULT NULL');
+
 $baseUrl = rtrim((string) $config['pokeapi']['base_url'], '/');
 $limit = (int) $config['pokeapi']['limit'];
 $offset = (int) $config['pokeapi']['offset'];
@@ -28,11 +31,12 @@ if (!isset($listResponse['results']) || !is_array($listResponse['results'])) {
 }
 
 $pokemonStmt = $pdo->prepare(
-    'INSERT INTO pokemon (pokemon_id, name, sprite_url, height, weight, base_experience)
-     VALUES (:pokemon_id, :name, :sprite_url, :height, :weight, :base_experience)
+    'INSERT INTO pokemon (pokemon_id, name, sprite_url, sprite_shiny_url, height, weight, base_experience)
+     VALUES (:pokemon_id, :name, :sprite_url, :sprite_shiny_url, :height, :weight, :base_experience)
      ON DUPLICATE KEY UPDATE
         name = VALUES(name),
         sprite_url = VALUES(sprite_url),
+        sprite_shiny_url = VALUES(sprite_shiny_url),
         height = VALUES(height),
         weight = VALUES(weight),
         base_experience = VALUES(base_experience),
@@ -61,8 +65,20 @@ $deleteTypesStmt = $pdo->prepare('DELETE FROM pokemon_types WHERE pokemon_id = :
 $deleteStatsStmt = $pdo->prepare('DELETE FROM pokemon_stats WHERE pokemon_id = :pokemon_id');
 $deleteMovesStmt = $pdo->prepare('DELETE FROM pokemon_moves WHERE pokemon_id = :pokemon_id');
 
+$evolutionDeleteStmt = $pdo->prepare('DELETE FROM pokemon_evolutions WHERE evolution_chain_id = :chain_id');
+$evolutionInsertStmt = $pdo->prepare(
+    'INSERT INTO pokemon_evolutions (evolution_chain_id, from_pokemon_id, to_pokemon_id, stage_depth, min_level, trigger_name)
+     VALUES (:evolution_chain_id, :from_pokemon_id, :to_pokemon_id, :stage_depth, :min_level, :trigger_name)
+     ON DUPLICATE KEY UPDATE
+        stage_depth = VALUES(stage_depth),
+        min_level = VALUES(min_level),
+        trigger_name = VALUES(trigger_name)'
+);
+
 $total = count($listResponse['results']);
 $processed = 0;
+$processedEvolutionChains = [];
+
 
 echo sprintf("Starting sync from Pokédex #%d (API offset %d) with limit %d.\n", $startFrom, $apiOffset, $limit);
 
@@ -85,6 +101,7 @@ foreach ($listResponse['results'] as $item) {
             ':pokemon_id' => $pokemonId,
             ':name' => (string) $pokemonData['name'],
             ':sprite_url' => (string) ($pokemonData['sprites']['front_default'] ?? ''),
+            ':sprite_shiny_url' => (string) ($pokemonData['sprites']['front_shiny'] ?? ''),
             ':height' => (int) ($pokemonData['height'] ?? 0),
             ':weight' => (int) ($pokemonData['weight'] ?? 0),
             ':base_experience' => isset($pokemonData['base_experience']) ? (int) $pokemonData['base_experience'] : null,
@@ -122,6 +139,20 @@ foreach ($listResponse['results'] as $item) {
             }
         }
 
+        if (isset($pokemonData['species']['url']) && is_string($pokemonData['species']['url'])) {
+            $speciesData = apiGet((string) $pokemonData['species']['url']);
+            $chainUrl = isset($speciesData['evolution_chain']['url']) ? (string) $speciesData['evolution_chain']['url'] : '';
+            $chainId = extractIdFromUrl($chainUrl);
+
+            if ($chainId !== null && !isset($processedEvolutionChains[$chainId])) {
+                $chainData = apiGet($chainUrl);
+                if (isset($chainData['chain']) && is_array($chainData['chain'])) {
+                    syncEvolutionChain($pdo, $chainId, $chainData['chain'], $evolutionDeleteStmt, $evolutionInsertStmt);
+                    $processedEvolutionChains[$chainId] = true;
+                }
+            }
+        }
+
         $pdo->commit();
         $processed++;
 
@@ -133,6 +164,74 @@ foreach ($listResponse['results'] as $item) {
 }
 
 echo sprintf("Done. %d Pokémon synchronized.\n", $processed);
+
+/**
+ * @param array<string, mixed> $chainNode
+ */
+function syncEvolutionChain(
+    PDO $pdo,
+    int $chainId,
+    array $chainNode,
+    PDOStatement $deleteStmt,
+    PDOStatement $insertStmt
+): void {
+    $deleteStmt->execute([':chain_id' => $chainId]);
+    traverseChainNode($chainId, $chainNode, null, 0, $insertStmt);
+}
+
+/**
+ * @param array<string, mixed> $node
+ */
+function traverseChainNode(
+    int $chainId,
+    array $node,
+    ?int $fromPokemonId,
+    int $depth,
+    PDOStatement $insertStmt
+): void {
+    $speciesUrl = isset($node['species']['url']) ? (string) $node['species']['url'] : '';
+    $toPokemonId = extractIdFromUrl($speciesUrl);
+
+    if ($toPokemonId === null) {
+        return;
+    }
+
+    $evolutionDetails = (isset($node['evolution_details'][0]) && is_array($node['evolution_details'][0]))
+        ? $node['evolution_details'][0]
+        : [];
+
+    $minLevel = isset($evolutionDetails['min_level']) ? (int) $evolutionDetails['min_level'] : null;
+    $triggerName = isset($evolutionDetails['trigger']['name']) ? (string) $evolutionDetails['trigger']['name'] : null;
+
+    $insertStmt->execute([
+        ':evolution_chain_id' => $chainId,
+        ':from_pokemon_id' => $fromPokemonId,
+        ':to_pokemon_id' => $toPokemonId,
+        ':stage_depth' => $depth,
+        ':min_level' => $minLevel,
+        ':trigger_name' => $triggerName,
+    ]);
+
+    foreach (($node['evolves_to'] ?? []) as $nextNode) {
+        if (!is_array($nextNode)) {
+            continue;
+        }
+        traverseChainNode($chainId, $nextNode, $toPokemonId, $depth + 1, $insertStmt);
+    }
+}
+
+function extractIdFromUrl(string $url): ?int
+{
+    if ($url === '') {
+        return null;
+    }
+
+    if (preg_match('#/(\d+)/?$#', $url, $matches) !== 1) {
+        return null;
+    }
+
+    return (int) $matches[1];
+}
 
 /**
  * @return array<string, mixed>
