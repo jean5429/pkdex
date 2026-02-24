@@ -227,7 +227,32 @@ foreach ($availableVersions as $versionKey) {
     const STORAGE_TAB_KEY = 'pkdex:activeTab';
     const initialUrl = new URL(window.location.href);
     const queryTab = initialUrl.searchParams.get('tab');
-    const savedTab = window.localStorage.getItem(STORAGE_TAB_KEY);
+
+    function getStoredValue(key) {
+        try {
+            return window.localStorage.getItem(key);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function setStoredValue(key, value) {
+        try {
+            window.localStorage.setItem(key, value);
+        } catch (error) {
+            // Ignore storage errors (private mode / blocked storage) to keep UI functional.
+        }
+    }
+
+    function removeStoredValue(key) {
+        try {
+            window.localStorage.removeItem(key);
+        } catch (error) {
+            // Ignore storage errors (private mode / blocked storage) to keep UI functional.
+        }
+    }
+
+    const savedTab = getStoredValue(STORAGE_TAB_KEY);
 
     let activeGen = <?= json_encode($selectedGen, JSON_THROW_ON_ERROR) ?>;
     let activeTab = (queryTab === 'pokemon' || queryTab === 'tmhm')
@@ -430,12 +455,12 @@ foreach ($availableVersions as $versionKey) {
         }
 
         if (versionInput.value !== '') {
-            window.localStorage.setItem(STORAGE_VERSION_KEY, versionInput.value);
+            setStoredValue(STORAGE_VERSION_KEY, versionInput.value);
         } else {
-            window.localStorage.removeItem(STORAGE_VERSION_KEY);
+            removeStoredValue(STORAGE_VERSION_KEY);
         }
 
-        window.localStorage.setItem(STORAGE_TAB_KEY, activeTab);
+        setStoredValue(STORAGE_TAB_KEY, activeTab);
 
         const query = url.searchParams.toString();
         window.location.href = query === '' ? url.pathname : (url.pathname + '?' + query);
@@ -444,7 +469,7 @@ foreach ($availableVersions as $versionKey) {
     tabButtons.forEach((button) => {
         button.addEventListener('click', () => {
             activeTab = button.dataset.tab || 'pokemon';
-            window.localStorage.setItem(STORAGE_TAB_KEY, activeTab);
+            setStoredValue(STORAGE_TAB_KEY, activeTab);
             setActiveTab();
         });
     });
@@ -489,7 +514,7 @@ foreach ($availableVersions as $versionKey) {
     });
     form.addEventListener('submit', (event) => event.preventDefault());
 
-    window.localStorage.setItem(STORAGE_TAB_KEY, activeTab);
+    setStoredValue(STORAGE_TAB_KEY, activeTab);
     setActiveTab();
     setActiveGenButton();
     applyFilters();
