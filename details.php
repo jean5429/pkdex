@@ -237,27 +237,6 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 <?php endif; ?>
             </article>
         </section>
-
-        <section class="mt-6 rounded-3xl bg-zinc-100 p-6">
-            <h2 class="mb-2 text-4xl font-extrabold">Locations</h2>
-            <?php if ($selectedVersion === ''): ?>
-                <p class="text-slate-500">No game version selected.</p>
-            <?php elseif ($currentLocations === []): ?>
-                <p class="text-slate-500">No known encounter locations for this game version.</p>
-            <?php else: ?>
-                <div class="mt-3 flex flex-wrap gap-2">
-                    <?php foreach ($currentLocations as $location): ?>
-                        <span class="inline-flex items-center gap-2 rounded-full bg-slate-200 px-3 py-1 text-sm font-semibold text-slate-800">
-                            <?= htmlspecialchars($formatLabel((string) str_replace('-area', '', (string) $location['name']))) ?>
-                            <?php if ($location['max_chance'] !== null): ?>
-                                <span class="rounded-full bg-blue-200 px-2 py-0.5 text-xs font-bold text-blue-800"><?= (int) $location['max_chance'] ?>%</span>
-                            <?php endif; ?>
-                        </span>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </section>
-
         <section class="mt-6 rounded-3xl bg-zinc-100 p-6">
             <h2 class="mb-2 text-4xl font-extrabold">Moves</h2>
             <form method="get" class="mt-3">
@@ -274,9 +253,28 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button name="method" value="level-up" class="rounded px-3 py-1 font-semibold <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600' ?>">Level Up</button>
-                        <button name="method" value="machine" class="rounded px-3 py-1 font-semibold <?= $selectedMethod === 'machine' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600' ?>">TM/HM</button>
+                    <div class="flex flex-col gap-2 md:ml-auto md:min-w-0">
+                        <div class="flex items-center gap-2">
+                            <button name="method" value="level-up" class="rounded px-3 py-1 font-semibold <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600' ?>">Level Up</button>
+                            <button name="method" value="machine" class="rounded px-3 py-1 font-semibold <?= $selectedMethod === 'machine' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600' ?>">TM/HM</button>
+                        </div>
+                        <div class="flex min-w-0 flex-wrap items-center gap-2 md:justify-end">
+                            <span class="text-sm font-semibold text-slate-700">Locations:</span>
+                            <?php if ($selectedVersion === ''): ?>
+                                <span class="text-sm text-slate-500">No game version selected.</span>
+                            <?php elseif ($currentLocations === []): ?>
+                                <span class="text-sm text-slate-500">No known encounter locations.</span>
+                            <?php else: ?>
+                                <?php foreach ($currentLocations as $location): ?>
+                                    <span class="inline-flex items-center gap-2 rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-800">
+                                        <?= htmlspecialchars($formatLabel((string) str_replace('-area', '', (string) $location['name']))) ?>
+                                        <?php if ($location['max_chance'] !== null): ?>
+                                            <span class="rounded-full bg-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-800"><?= (int) $location['max_chance'] ?>%</span>
+                                        <?php endif; ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </form>

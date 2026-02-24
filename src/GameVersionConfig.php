@@ -76,3 +76,49 @@ function pkdexFormatGameVersionLabel(string $value): string
 {
     return ucwords(str_replace(['-', '_'], ' ', $value));
 }
+
+function pkdexNormalizeGameVersion(string $value): string
+{
+    static $map = [
+        'red' => 'red-blue',
+        'blue' => 'red-blue',
+        'red-japan' => 'red-blue',
+        'green' => 'red-blue',
+        'yellow' => 'yellow',
+        'gold' => 'gold-silver',
+        'silver' => 'gold-silver',
+        'crystal' => 'crystal',
+        'ruby' => 'ruby-sapphire',
+        'sapphire' => 'ruby-sapphire',
+        'emerald' => 'emerald',
+        'firered' => 'firered-leafgreen',
+        'leafgreen' => 'firered-leafgreen',
+        'diamond' => 'diamond-pearl',
+        'pearl' => 'diamond-pearl',
+        'platinum' => 'platinum',
+        'heartgold' => 'heartgold-soulsilver',
+        'soulsilver' => 'heartgold-soulsilver',
+        'black' => 'black-white',
+        'white' => 'black-white',
+        'black-2' => 'black-2-white-2',
+        'white-2' => 'black-2-white-2',
+        'x' => 'x-y',
+        'y' => 'x-y',
+        'omega-ruby' => 'omega-ruby-alpha-sapphire',
+        'alpha-sapphire' => 'omega-ruby-alpha-sapphire',
+        'sun' => 'sun-moon',
+        'moon' => 'sun-moon',
+        'ultra-sun' => 'ultra-sun-ultra-moon',
+        'ultra-moon' => 'ultra-sun-ultra-moon',
+        'lets-go-pikachu' => 'lets-go-pikachu-lets-go-eevee',
+        'lets-go-eevee' => 'lets-go-pikachu-lets-go-eevee',
+        'sword' => 'sword-shield',
+        'shield' => 'sword-shield',
+        'brilliant-diamond' => 'brilliant-diamond-and-shining-pearl',
+        'shining-pearl' => 'brilliant-diamond-and-shining-pearl',
+        'scarlet' => 'scarlet-violet',
+        'violet' => 'scarlet-violet',
+    ];
+
+    return $map[$value] ?? $value;
+}

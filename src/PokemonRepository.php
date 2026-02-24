@@ -84,10 +84,10 @@ final class PokemonRepository
 
         $rows = $stmt === false ? [] : ($stmt->fetchAll() ?: []);
 
-        return array_map(
-            static fn (array $row): string => (string) $row['game_version'],
+        return array_values(array_unique(array_map(
+            static fn (array $row): string => pkdexNormalizeGameVersion((string) $row['game_version']),
             $rows
-        );
+        )));
     }
 
     /**
@@ -168,7 +168,7 @@ final class PokemonRepository
         $movesByVersion = [];
 
         foreach ($rows as $row) {
-            $version = (string) $row['game_version'];
+            $version = pkdexNormalizeGameVersion((string) $row['game_version']);
             $movesByVersion[$version] ??= [];
             $movesByVersion[$version][] = [
                 'name' => (string) $row['move_name'],
@@ -197,7 +197,7 @@ final class PokemonRepository
         $locationsByVersion = [];
 
         foreach ($rows as $row) {
-            $version = (string) $row['game_version'];
+            $version = pkdexNormalizeGameVersion((string) $row['game_version']);
             $locationsByVersion[$version] ??= [];
             $locationsByVersion[$version][] = [
                 'name' => (string) $row['location_name'],
