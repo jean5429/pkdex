@@ -46,6 +46,23 @@ final class PokemonRepository
         return $pokemon;
     }
 
+    /** @return array<int, string> */
+    public function listGameVersions(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT DISTINCT game_version
+             FROM pokemon_moves
+             ORDER BY game_version ASC'
+        );
+
+        $rows = $stmt === false ? [] : ($stmt->fetchAll() ?: []);
+
+        return array_map(
+            static fn (array $row): string => (string) $row['game_version'],
+            $rows
+        );
+    }
+
     /**
      * @return array<string, mixed>|null
      */

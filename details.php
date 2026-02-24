@@ -9,6 +9,30 @@ $repository = new PokemonRepository((new Database($config['db']))->pdo());
 $pokemon = $id > 0 ? $repository->getPokemonDetails($id) : null;
 
 $formatLabel = static fn (string $value): string => ucwords(str_replace(['-', '_'], ' ', $value));
+$selectedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
+$selectedMethod = isset($_GET['method']) ? trim((string) $_GET['method']) : 'level-up';
+$availableMethods = ['level-up', 'machine'];
+
+if (!in_array($selectedMethod, $availableMethods, true)) {
+    $selectedMethod = 'level-up';
+}
+
+$versionGroups = [];
+if ($pokemon !== null) {
+    $versionGroups = array_keys($pokemon['moves']);
+
+    if ($selectedVersion === '' || !in_array($selectedVersion, $versionGroups, true)) {
+        $selectedVersion = $versionGroups[0] ?? '';
+    }
+}
+
+$currentMoves = [];
+if ($selectedVersion !== '' && isset($pokemon['moves'][$selectedVersion])) {
+    $currentMoves = array_values(array_filter(
+        $pokemon['moves'][$selectedVersion],
+        static fn (array $move): bool => (string) $move['method'] === $selectedMethod
+    ));
+}
 
 ?>
 <!DOCTYPE html>
@@ -21,7 +45,7 @@ $formatLabel = static fn (string $value): string => ucwords(str_replace(['-', '_
 </head>
 <body class="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200 text-slate-800">
 <main class="mx-auto max-w-6xl p-6">
-    <a href="index.php" class="inline-flex items-center font-semibold text-blue-700 hover:text-blue-800">← Back to Pokédex</a>
+    <a href="index.php?version=<?= urlencode($selectedVersion) ?>" class="inline-flex items-center font-semibold text-blue-700 hover:text-blue-800">← Back to Pokédex</a>
 
     <?php if ($pokemon === null): ?>
         <section class="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-red-900">
@@ -61,36 +85,50 @@ $formatLabel = static fn (string $value): string => ucwords(str_replace(['-', '_
             </article>
 
             <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 class="mb-1 text-2xl font-extrabold">Moves by game version</h2>
-                <p class="mb-3 text-sm text-slate-500">Each version group is separated to avoid mixed move lists.</p>
-
-                <div class="max-h-[28rem] space-y-4 overflow-auto pr-1">
-                    <?php foreach ($pokemon['moves'] as $version => $moves): ?>
-                        <section class="overflow-hidden rounded-2xl border border-slate-200">
-                            <header class="flex items-center justify-between bg-slate-50 px-3 py-2">
-                                <h3 class="font-bold text-slate-800"><?= htmlspecialchars($formatLabel((string) $version)) ?></h3>
-                                <span class="text-xs font-semibold text-slate-500"><?= count($moves) ?> moves</span>
-                            </header>
-                            <table class="w-full text-sm">
-                                <thead>
-                                <tr class="border-y border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                                    <th class="px-3 py-2">Move</th>
-                                    <th class="px-3 py-2">Method</th>
-                                    <th class="px-3 py-2">Level</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($moves as $move): ?>
-                                    <tr class="border-b border-slate-100 last:border-b-0">
-                                        <td class="px-3 py-2 font-medium capitalize"><?= htmlspecialchars(str_replace('-', ' ', (string) $move['name'])) ?></td>
-                                        <td class="px-3 py-2"><?= htmlspecialchars($formatLabel((string) $move['method'])) ?></td>
-                                        <td class="px-3 py-2"><?= (int) $move['level'] ?></td>
-                                    </tr>
+                <h2 class="mb-1 text-2xl font-extrabold">Moves</h2>
+                <form method="get" class="mt-4">
+                    <input type="hidden" name="id" value="<?= (int) $pokemon['pokemon_id'] ?>">
+                    <div class="flex flex-col gap-3 md:flex-row md:items-end">
+                        <div class="w-full md:max-w-sm">
+                            <label for="version" class="text-sm font-semibold text-slate-700">Select Version:</label>
+                            <select id="version" name="version" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                                <?php foreach ($versionGroups as $version): ?>
+                                    <option value="<?= htmlspecialchars($version) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($formatLabel((string) $version)) ?>
+                                    </option>
                                 <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </section>
-                    <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button name="method" value="level-up" class="rounded px-3 py-1 font-semibold <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600' ?>">Level Up</button>
+                            <button name="method" value="machine" class="rounded px-3 py-1 font-semibold <?= $selectedMethod === 'machine' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600' ?>">TM/HM</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+                    <table class="w-full text-sm">
+                        <thead>
+                        <tr class="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-700">
+                            <th class="px-4 py-3">Move name</th>
+                            <th class="px-4 py-3"><?= $selectedMethod === 'level-up' ? 'Learned at' : 'Method' ?></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php if ($currentMoves === []): ?>
+                            <tr>
+                                <td colspan="2" class="px-4 py-4 text-slate-500">No moves for this method/version combination.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($currentMoves as $move): ?>
+                                <tr class="border-t border-slate-200">
+                                    <td class="px-4 py-3 font-medium capitalize"><?= htmlspecialchars(str_replace('-', ' ', (string) $move['name'])) ?></td>
+                                    <td class="px-4 py-3"><?= $selectedMethod === 'level-up' ? (int) $move['level'] : htmlspecialchars($formatLabel((string) $move['method'])) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </article>
         </section>

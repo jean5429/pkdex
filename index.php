@@ -6,7 +6,13 @@ require_once __DIR__ . '/src/bootstrap.php';
 
 $repository = new PokemonRepository((new Database($config['db']))->pdo());
 $search = isset($_GET['search']) ? (string) $_GET['search'] : '';
+$selectedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
+$allVersions = $repository->listGameVersions();
+if ($selectedVersion === '' && $allVersions !== []) {
+    $selectedVersion = $allVersions[0];
+}
 $pokemon = $repository->listPokemon($search, 120);
+$formatLabel = static fn (string $value): string => ucwords(str_replace(['-', '_'], ' ', $value));
 
 ?>
 <!DOCTYPE html>
@@ -26,10 +32,24 @@ $pokemon = $repository->listPokemon($search, 120);
     </header>
 
     <form method="get" class="mb-6 bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-        <label for="search" class="font-semibold text-sm">Search by name or number</label>
-        <div class="mt-2 flex gap-2">
-            <input id="search" name="search" value="<?= htmlspecialchars($search) ?>" class="flex-1 border rounded-lg px-3 py-2" placeholder="pikachu or 25">
-            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">Search</button>
+        <div class="grid gap-4 md:grid-cols-2">
+            <div>
+                <label for="search" class="font-semibold text-sm">Search by name or number</label>
+                <input id="search" name="search" value="<?= htmlspecialchars($search) ?>" class="mt-2 w-full border rounded-lg px-3 py-2" placeholder="pikachu or 25">
+            </div>
+            <div>
+                <label for="version" class="font-semibold text-sm">Game version</label>
+                <select id="version" name="version" class="mt-2 w-full border rounded-lg px-3 py-2 bg-white">
+                    <?php foreach ($allVersions as $version): ?>
+                        <option value="<?= htmlspecialchars($version) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($formatLabel($version)) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <div class="mt-4">
+            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">Apply filters</button>
         </div>
     </form>
 
@@ -40,7 +60,7 @@ $pokemon = $repository->listPokemon($search, 120);
     <?php else: ?>
         <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <?php foreach ($pokemon as $entry): ?>
-                <a href="details.php?id=<?= (int) $entry['pokemon_id'] ?>" class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition">
+                <a href="details.php?id=<?= (int) $entry['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition">
                     <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="w-24 h-24 mx-auto" loading="lazy">
                     <p class="text-xs text-slate-500 text-center">#<?= (int) $entry['pokemon_id'] ?></p>
                     <h2 class="font-bold text-center capitalize"><?= htmlspecialchars((string) $entry['name']) ?></h2>
