@@ -135,24 +135,54 @@ echo sprintf("Done. %d Pokémon synchronized.\n", $processed);
  */
 function apiGet(string $url): array
 {
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 20,
-        CURLOPT_HTTPHEADER => ['Accept: application/json'],
-        CURLOPT_USERAGENT => 'pkdex-db-updater/1.0',
-    ]);
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        if ($ch === false) {
+            throw new RuntimeException('Unable to initialize cURL client.');
+        }
 
-    $response = curl_exec($ch);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_HTTPHEADER => ['Accept: application/json'],
+            CURLOPT_USERAGENT => 'pkdex-db-updater/1.0',
+        ]);
 
-    if ($response === false) {
-        $message = curl_error($ch);
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            $message = curl_error($ch);
+            curl_close($ch);
+            throw new RuntimeException('Curl request failed: ' . $message);
+        }
+
+        $statusCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        throw new RuntimeException('Curl request failed: ' . $message);
-    }
+    } else {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => "Accept: application/json\r\nUser-Agent: pkdex-db-updater/1.0\r\n",
+                'timeout' => 20,
+                'ignore_errors' => true,
+            ],
+        ]);
 
-    $statusCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+        $response = @file_get_contents($url, false, $context);
+        if ($response === false) {
+            $error = error_get_last();
+            $message = isset($error['message']) ? (string) $error['message'] : 'unknown error';
+            throw new RuntimeException('HTTP request failed without cURL: ' . $message);
+        }
+
+        $statusCode = 0;
+        foreach ($http_response_header ?? [] as $headerLine) {
+            if (preg_match('/^HTTP\/\S+\s+(\d{3})/', (string) $headerLine, $matches) === 1) {
+                $statusCode = (int) $matches[1];
+                break;
+            }
+        }
+    }
 
     if ($statusCode < 200 || $statusCode >= 300) {
         throw new RuntimeException(sprintf('Request failed (%d) for %s', $statusCode, $url));
