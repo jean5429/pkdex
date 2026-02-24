@@ -69,12 +69,6 @@ $locationStmt = $pdo->prepare(
      ON DUPLICATE KEY UPDATE max_chance = VALUES(max_chance)'
 );
 
-$tmhmStmt = $pdo->prepare(
-    'INSERT INTO pokemon_tmhm (pokemon_id, move_name, machine_name, game_version)
-     VALUES (:pokemon_id, :move_name, :machine_name, :game_version)
-     ON DUPLICATE KEY UPDATE machine_name = VALUES(machine_name)'
-);
-
 $gameTmhmStmt = $pdo->prepare(
     'INSERT INTO game_tmhm (move_name, machine_name, game_version)
      VALUES (:move_name, :machine_name, :game_version)
@@ -85,8 +79,6 @@ $deleteTypesStmt = $pdo->prepare('DELETE FROM pokemon_types WHERE pokemon_id = :
 $deleteStatsStmt = $pdo->prepare('DELETE FROM pokemon_stats WHERE pokemon_id = :pokemon_id');
 $deleteMovesStmt = $pdo->prepare('DELETE FROM pokemon_moves WHERE pokemon_id = :pokemon_id');
 $deleteLocationsStmt = $pdo->prepare('DELETE FROM pokemon_locations WHERE pokemon_id = :pokemon_id');
-$deleteTmhmStmt = $pdo->prepare('DELETE FROM pokemon_tmhm WHERE pokemon_id = :pokemon_id');
-
 $evolutionDeleteStmt = $pdo->prepare('DELETE FROM pokemon_evolutions WHERE evolution_chain_id = :chain_id');
 $evolutionInsertStmt = $pdo->prepare(
     'INSERT INTO pokemon_evolutions (evolution_chain_id, from_pokemon_id, to_pokemon_id, stage_depth, min_level, trigger_name)
@@ -163,7 +155,6 @@ foreach ($listResponse['results'] as $item) {
         }
 
 
-        $deleteTmhmStmt->execute([':pokemon_id' => $pokemonId]);
         foreach (($pokemonData['moves'] ?? []) as $move) {
             $moveName = (string) ($move['move']['name'] ?? '');
             $moveUrl = (string) ($move['move']['url'] ?? '');
@@ -173,46 +164,39 @@ foreach ($listResponse['results'] as $item) {
 
             if (!isset($moveMachineCache[$moveUrl])) {
                 $moveMachineCache[$moveUrl] = apiGet($moveUrl);
-            }
+                $moveData = $moveMachineCache[$moveUrl];
 
-            $moveData = $moveMachineCache[$moveUrl];
-            foreach (($moveData['machines'] ?? []) as $machineData) {
-                if (!is_array($machineData)) {
-                    continue;
+                foreach (($moveData['machines'] ?? []) as $machineData) {
+                    if (!is_array($machineData)) {
+                        continue;
+                    }
+
+                    $machineUrl = isset($machineData['machine']['url']) ? (string) $machineData['machine']['url'] : '';
+                    $versionGroup = isset($machineData['version_group']['name']) ? (string) $machineData['version_group']['name'] : '';
+
+                    if ($machineUrl === '' || $versionGroup === '') {
+                        continue;
+                    }
+
+                    if (!isset($machineItemCache[$machineUrl])) {
+                        $machineItemCache[$machineUrl] = apiGet($machineUrl);
+                    }
+
+                    $machineDetails = $machineItemCache[$machineUrl];
+                    $machineName = isset($machineDetails['item']['name']) ? (string) $machineDetails['item']['name'] : '';
+
+                    if ($machineName === '' || !preg_match('/^(tm|hm)-?\d+/i', $machineName)) {
+                        continue;
+                    }
+
+                    $normalizedMachine = strtoupper(str_replace('-', '', $machineName));
+
+                    $gameTmhmStmt->execute([
+                        ':move_name' => $moveName,
+                        ':machine_name' => $normalizedMachine,
+                        ':game_version' => $versionGroup,
+                    ]);
                 }
-
-                $machineUrl = isset($machineData['machine']['url']) ? (string) $machineData['machine']['url'] : '';
-                $versionGroup = isset($machineData['version_group']['name']) ? (string) $machineData['version_group']['name'] : '';
-
-                if ($machineUrl === '' || $versionGroup === '') {
-                    continue;
-                }
-
-                if (!isset($machineItemCache[$machineUrl])) {
-                    $machineItemCache[$machineUrl] = apiGet($machineUrl);
-                }
-
-                $machineDetails = $machineItemCache[$machineUrl];
-                $machineName = isset($machineDetails['item']['name']) ? (string) $machineDetails['item']['name'] : '';
-
-                if ($machineName === '' || !preg_match('/^(tm|hm)-?\d+/i', $machineName)) {
-                    continue;
-                }
-
-                $normalizedMachine = strtoupper(str_replace('-', '', $machineName));
-
-                $tmhmStmt->execute([
-                    ':pokemon_id' => $pokemonId,
-                    ':move_name' => $moveName,
-                    ':machine_name' => $normalizedMachine,
-                    ':game_version' => $versionGroup,
-                ]);
-
-                $gameTmhmStmt->execute([
-                    ':move_name' => $moveName,
-                    ':machine_name' => $normalizedMachine,
-                    ':game_version' => $versionGroup,
-                ]);
             }
         }
 
