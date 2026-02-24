@@ -22,6 +22,9 @@ if ($selectedGen !== 'all' && !array_key_exists($selectedGen, $generationFilters
 }
 
 $pokemon = $repository->listPokemon($search);
+$initialPokemonCount = 24;
+$initialPokemon = array_slice($pokemon, 0, $initialPokemonCount);
+$deferredPokemon = array_slice($pokemon, $initialPokemonCount);
 $palette = pkdexGameVersionPalette();
 
 ?>
@@ -84,7 +87,7 @@ $palette = pkdexGameVersionPalette();
         </section>
     <?php else: ?>
         <section id="pokemon-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <?php foreach ($pokemon as $entry): ?>
+            <?php foreach ($initialPokemon as $entry): ?>
                 <a
                     href="details.php?id=<?= (int) $entry['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>"
                     class="pokemon-card bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition"
@@ -107,10 +110,83 @@ $palette = pkdexGameVersionPalette();
     const searchInput = document.getElementById('search');
     const versionSelect = document.getElementById('version');
     const genButtons = document.querySelectorAll('.gen-filter-btn');
-    const cards = document.querySelectorAll('.pokemon-card');
+    const grid = document.getElementById('pokemon-grid');
     const emptyMessage = document.getElementById('pokemon-empty-message');
+    const deferredPokemon = <?= json_encode(array_map(static function (array $entry): array {
+        return [
+            'pokemonId' => (int) $entry['pokemon_id'],
+            'name' => (string) $entry['name'],
+            'spriteUrl' => (string) $entry['sprite_url'],
+            'types' => implode(', ', $entry['types']),
+        ];
+    }, $deferredPokemon), JSON_THROW_ON_ERROR) ?>;
 
     let activeGen = <?= json_encode($selectedGen, JSON_THROW_ON_ERROR) ?>;
+
+    function getCards() {
+        return grid ? Array.from(grid.querySelectorAll('.pokemon-card')) : [];
+    }
+
+    function buildPokemonCard(entry) {
+        const card = document.createElement('a');
+        card.className = 'pokemon-card bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition';
+        card.dataset.pokemonId = String(entry.pokemonId);
+        card.dataset.name = String(entry.name).toLowerCase();
+
+        const versionParam = versionSelect.value
+            ? '&version=' + encodeURIComponent(versionSelect.value)
+            : '';
+        card.href = 'details.php?id=' + encodeURIComponent(String(entry.pokemonId)) + versionParam;
+
+        const sprite = document.createElement('img');
+        sprite.src = entry.spriteUrl;
+        sprite.alt = entry.name;
+        sprite.className = 'w-24 h-24 mx-auto';
+        sprite.loading = 'lazy';
+
+        const number = document.createElement('p');
+        number.className = 'text-xs text-slate-500 text-center';
+        number.textContent = '#' + entry.pokemonId;
+
+        const title = document.createElement('h2');
+        title.className = 'font-bold text-center capitalize';
+        title.textContent = entry.name;
+
+        const types = document.createElement('p');
+        types.className = 'text-xs text-center mt-1 text-slate-500';
+        types.textContent = entry.types;
+
+        card.append(sprite, number, title, types);
+
+        return card;
+    }
+
+    function appendDeferredPokemon() {
+        if (!grid || deferredPokemon.length === 0) {
+            return;
+        }
+
+        const chunkSize = 24;
+        let cursor = 0;
+
+        function appendChunk() {
+            const fragment = document.createDocumentFragment();
+            const end = Math.min(cursor + chunkSize, deferredPokemon.length);
+
+            for (; cursor < end; cursor += 1) {
+                fragment.appendChild(buildPokemonCard(deferredPokemon[cursor]));
+            }
+
+            grid.appendChild(fragment);
+            applyFilters();
+
+            if (cursor < deferredPokemon.length) {
+                window.requestAnimationFrame(appendChunk);
+            }
+        }
+
+        window.requestAnimationFrame(appendChunk);
+    }
 
     function setActiveGenButton() {
         genButtons.forEach((button) => {
@@ -141,6 +217,8 @@ $palette = pkdexGameVersionPalette();
         const maxId = selectedButton && selectedButton.dataset.maxId ? Number(selectedButton.dataset.maxId) : null;
 
         let visibleCount = 0;
+
+        const cards = getCards();
 
         cards.forEach((card) => {
             const pokemonId = Number(card.dataset.pokemonId);
@@ -177,6 +255,7 @@ $palette = pkdexGameVersionPalette();
 
     setActiveGenButton();
     applyFilters();
+    appendDeferredPokemon();
 })();
 </script>
 </body>
