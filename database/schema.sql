@@ -46,6 +46,16 @@ CREATE TABLE IF NOT EXISTS pokemon_moves (
     CONSTRAINT fk_pokemon_moves_pokemon FOREIGN KEY (pokemon_id) REFERENCES pokemon (pokemon_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS pokemon_locations (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    pokemon_id INT UNSIGNED NOT NULL,
+    game_version VARCHAR(80) NOT NULL,
+    location_name VARCHAR(120) NOT NULL,
+    max_chance TINYINT UNSIGNED DEFAULT NULL,
+    UNIQUE KEY unique_pokemon_location_version (pokemon_id, game_version, location_name),
+    CONSTRAINT fk_pokemon_locations_pokemon FOREIGN KEY (pokemon_id) REFERENCES pokemon (pokemon_id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS pokemon_evolutions (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     evolution_chain_id INT UNSIGNED NOT NULL,

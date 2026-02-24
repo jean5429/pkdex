@@ -21,7 +21,10 @@ if (!in_array($selectedMethod, $availableMethods, true)) {
 
 $versionGroups = [];
 if ($pokemon !== null) {
-    $versionGroups = array_values(array_intersect($allowedVersions, array_keys($pokemon['moves'])));
+    $versionGroups = array_values(array_intersect(
+        $allowedVersions,
+        array_unique(array_merge(array_keys($pokemon['moves']), array_keys($pokemon['locations'] ?? [])))
+    ));
 
     if ($selectedVersion === '' || !in_array($selectedVersion, $versionGroups, true)) {
         $selectedVersion = $versionGroups[0] ?? '';
@@ -34,6 +37,11 @@ if ($selectedVersion !== '' && isset($pokemon['moves'][$selectedVersion])) {
         $pokemon['moves'][$selectedVersion],
         static fn (array $move): bool => (string) $move['method'] === $selectedMethod
     ));
+}
+
+$currentLocations = [];
+if ($selectedVersion !== '' && isset($pokemon['locations'][$selectedVersion])) {
+    $currentLocations = $pokemon['locations'][$selectedVersion];
 }
 
 $typeChart = [
@@ -228,6 +236,26 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                     </div>
                 <?php endif; ?>
             </article>
+        </section>
+
+        <section class="mt-6 rounded-3xl bg-zinc-100 p-6">
+            <h2 class="mb-2 text-4xl font-extrabold">Locations</h2>
+            <?php if ($selectedVersion === ''): ?>
+                <p class="text-slate-500">No game version selected.</p>
+            <?php elseif ($currentLocations === []): ?>
+                <p class="text-slate-500">No known encounter locations for this game version.</p>
+            <?php else: ?>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <?php foreach ($currentLocations as $location): ?>
+                        <span class="inline-flex items-center gap-2 rounded-full bg-slate-200 px-3 py-1 text-sm font-semibold text-slate-800">
+                            <?= htmlspecialchars($formatLabel((string) str_replace('-area', '', (string) $location['name']))) ?>
+                            <?php if ($location['max_chance'] !== null): ?>
+                                <span class="rounded-full bg-blue-200 px-2 py-0.5 text-xs font-bold text-blue-800"><?= (int) $location['max_chance'] ?>%</span>
+                            <?php endif; ?>
+                        </span>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
 
         <section class="mt-6 rounded-3xl bg-zinc-100 p-6">

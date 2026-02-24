@@ -112,6 +112,7 @@ final class PokemonRepository
         $pokemon['types'] = $this->typesByPokemonId($pokemonId);
         $pokemon['stats'] = $this->statsByPokemonId($pokemonId);
         $pokemon['moves'] = $this->movesByPokemonId($pokemonId);
+        $pokemon['locations'] = $this->locationsByPokemonId($pokemonId);
         $pokemon['neighbors'] = $this->neighborsByPokemonId($pokemonId);
         $pokemon['evolution_chain'] = $this->evolutionChainByPokemonId($pokemonId);
 
@@ -177,6 +178,34 @@ final class PokemonRepository
         }
 
         return $movesByVersion;
+    }
+
+
+    /** @return array<string, array<int, array{name:string,max_chance:int|null}>> */
+    private function locationsByPokemonId(int $pokemonId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT game_version, location_name, max_chance
+             FROM pokemon_locations
+             WHERE pokemon_id = :pokemonId
+             ORDER BY game_version ASC, location_name ASC'
+        );
+        $stmt->bindValue(':pokemonId', $pokemonId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll() ?: [];
+        $locationsByVersion = [];
+
+        foreach ($rows as $row) {
+            $version = (string) $row['game_version'];
+            $locationsByVersion[$version] ??= [];
+            $locationsByVersion[$version][] = [
+                'name' => (string) $row['location_name'],
+                'max_chance' => isset($row['max_chance']) ? (int) $row['max_chance'] : null,
+            ];
+        }
+
+        return $locationsByVersion;
     }
 
     /** @return array{previous:array<string,mixed>|null,next:array<string,mixed>|null} */
