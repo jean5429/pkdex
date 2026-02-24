@@ -138,11 +138,11 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
         </section>
     <?php else: ?>
         <header class="text-center">
-            <h1 class="text-4xl font-extrabold tracking-tight capitalize md:text-6xl"><?= htmlspecialchars((string) $pokemon['name']) ?> <span class="text-blue-600">#<?= (int) $pokemon['pokemon_id'] ?></span></h1>
+            <h1 class="text-3xl font-extrabold tracking-tight capitalize md:text-5xl"><?= htmlspecialchars((string) $pokemon['name']) ?> <span class="text-blue-600">#<?= (int) $pokemon['pokemon_id'] ?></span></h1>
             <div class="mt-6">
                 <a href="index.php?version=<?= urlencode($selectedVersion) ?>" class="rounded-xl bg-blue-600 px-8 py-3 text-lg font-bold text-white shadow">← Back to Main List</a>
             </div>
-            <div class="mt-5 flex justify-center gap-4 text-lg font-semibold md:text-2xl">
+            <div class="mt-5 flex justify-center gap-4 text-base font-semibold md:text-xl">
                 <?php if ($pokemon['neighbors']['previous'] !== null): ?>
                     <a href="details.php?id=<?= (int) $pokemon['neighbors']['previous']['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="rounded-xl bg-zinc-300 px-5 py-2 hover:bg-zinc-400">← <?= htmlspecialchars($formatLabel((string) $pokemon['neighbors']['previous']['name'])) ?> #<?= (int) $pokemon['neighbors']['previous']['pokemon_id'] ?></a>
                 <?php endif; ?>
@@ -154,16 +154,16 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
 
         <section class="mt-10 grid gap-6 xl:grid-cols-3">
             <article class="rounded-3xl bg-zinc-100 p-8">
-                <h2 class="text-center text-3xl font-bold">Basic Info</h2>
+                <h2 class="text-center text-2xl font-bold">Basic Info</h2>
                 <div class="mt-6 grid grid-cols-2 text-center">
-                    <p class="text-2xl font-semibold">Normal</p>
-                    <p class="text-2xl font-semibold">Shiny</p>
+                    <p class="text-xl font-semibold">Normal</p>
+                    <p class="text-xl font-semibold">Shiny</p>
                 </div>
                 <div class="mt-4 grid grid-cols-2 items-center gap-2">
                     <img src="<?= htmlspecialchars($officialArtworkUrl) ?>" alt="normal sprite" class="mx-auto h-40 w-40 object-contain md:h-52 md:w-52" loading="lazy">
                     <img src="<?= htmlspecialchars($officialArtworkShinyUrl) ?>" alt="shiny sprite" class="mx-auto h-40 w-40 object-contain md:h-52 md:w-52" loading="lazy">
                 </div>
-                <h3 class="mt-6 text-center text-3xl font-bold capitalize"><?= htmlspecialchars((string) $pokemon['name']) ?></h3>
+                <h3 class="mt-6 text-center text-2xl font-bold capitalize"><?= htmlspecialchars((string) $pokemon['name']) ?></h3>
                 <p class="mt-3 text-center text-xl">Height: <?= number_format(((int) $pokemon['height']) / 10, 2) ?> m | Weight: <?= number_format(((int) $pokemon['weight']) / 10, 2) ?> kg</p>
                 <div class="mt-5 flex flex-wrap justify-center gap-2">
                     <?php foreach ($pokemon['types'] as $type): ?>
@@ -174,7 +174,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
             </article>
 
             <article class="rounded-3xl bg-zinc-100 p-8">
-                <h2 class="text-center text-3xl font-bold">Stats</h2>
+                <h2 class="text-center text-2xl font-bold">Stats</h2>
                 <ul class="mt-6 space-y-3">
                     <?php foreach ($pokemon['stats'] as $stat): ?>
                         <?php
@@ -183,7 +183,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                         $barWidth = min(100, (int) round(($value / 150) * 100));
                         $barColor = $statColors[$statName] ?? 'bg-red-500';
                         ?>
-                        <li class="grid grid-cols-[70px_1fr_34px] items-center gap-3 text-xl font-semibold md:grid-cols-[90px_1fr_50px] md:text-3xl">
+                        <li class="grid grid-cols-[70px_1fr_34px] items-center gap-3 text-lg font-semibold md:grid-cols-[90px_1fr_50px] md:text-2xl">
                             <span><?= htmlspecialchars($statLabels[$statName] ?? $formatLabel($statName)) ?>:</span>
                             <div class="h-6 rounded-full bg-slate-300 md:h-7">
                                 <div class="h-6 rounded-full <?= $barColor ?> md:h-7" style="width: <?= $barWidth ?>%"></div>
@@ -193,9 +193,9 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                     <?php endforeach; ?>
                 </ul>
 
-                <h3 class="mt-8 text-center text-3xl font-bold">Type Effectiveness</h3>
+                <h3 class="mt-8 text-center text-2xl font-bold">Type Effectiveness</h3>
                 <div class="mt-6">
-                    <p class="text-2xl font-bold">Weaknesses:</p>
+                    <p class="text-xl font-bold">Weaknesses:</p>
                     <div class="mt-3 flex flex-wrap gap-2">
                         <?php foreach ($weaknesses as $type => $multiplier): ?>
                             <span class="rounded-full px-3 py-1 text-lg font-bold text-white <?= $typeColors[$type] ?? 'bg-slate-500' ?>"><?= htmlspecialchars($formatLabel((string) $type)) ?> (<?= rtrim(rtrim(number_format($multiplier, 2), '0'), '.') ?>x)</span>
@@ -204,7 +204,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 </div>
 
                 <div class="mt-5">
-                    <p class="text-2xl font-bold">Resistances:</p>
+                    <p class="text-xl font-bold">Resistances:</p>
                     <div class="mt-3 flex flex-wrap gap-2">
                         <?php foreach ($resistances as $type => $multiplier): ?>
                             <span class="rounded-full px-3 py-1 text-lg font-bold text-white <?= $typeColors[$type] ?? 'bg-slate-500' ?>"><?= htmlspecialchars($formatLabel((string) $type)) ?> (<?= rtrim(rtrim(number_format($multiplier, 2), '0'), '.') ?>x)</span>
@@ -214,7 +214,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
             </article>
 
             <article class="rounded-3xl bg-zinc-100 p-8">
-                <h2 class="text-center text-3xl font-bold">Evolution Tree</h2>
+                <h2 class="text-center text-2xl font-bold">Evolution Tree</h2>
                 <?php if ($pokemon['evolution_chain'] === []): ?>
                     <p class="mt-6 text-center text-xl text-slate-600">No evolution chain in database yet. Run <code>php update_database.php</code> to sync species and evolution data.</p>
                 <?php else: ?>
@@ -223,14 +223,14 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                             <div>
                                 <a href="details.php?id=<?= (int) $stage['to_pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="inline-block transition hover:scale-105" title="View <?= htmlspecialchars($formatLabel((string) $stage['name'])) ?> details">
                                     <img src="<?= htmlspecialchars((string) $stage['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $stage['name']) ?>" class="mx-auto h-20 w-20 md:h-24 md:w-24">
-                                    <p class="text-xl capitalize md:text-3xl <?= (int) $stage['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-bold text-emerald-600' : 'font-medium text-slate-700 hover:text-blue-600' ?>"><?= htmlspecialchars((string) $stage['name']) ?></p>
+                                    <p class="text-lg capitalize md:text-2xl <?= (int) $stage['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-bold text-emerald-600' : 'font-medium text-slate-700 hover:text-blue-600' ?>"><?= htmlspecialchars((string) $stage['name']) ?></p>
                                 </a>
                                 <?php if ($stage['min_level'] !== null): ?>
                                     <p class="text-lg text-slate-500">(Lv. <?= (int) $stage['min_level'] ?>)</p>
                                 <?php endif; ?>
                             </div>
                             <?php if ($index < count($pokemon['evolution_chain']) - 1): ?>
-                                <p class="text-4xl text-slate-400">↓</p>
+                                <p class="text-3xl text-slate-400">↓</p>
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
@@ -239,7 +239,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
         </section>
         <section class="mt-6 grid gap-6 lg:grid-cols-3 lg:items-start">
             <article class="rounded-3xl bg-zinc-100 p-6 lg:col-span-2">
-                <h2 class="mb-2 text-4xl font-extrabold">Moves</h2>
+                <h2 class="mb-2 text-3xl font-extrabold">Moves</h2>
                 <form method="get" class="mt-3">
                     <input type="hidden" name="id" value="<?= (int) $pokemon['pokemon_id'] ?>">
                     <input type="hidden" name="method" value="<?= htmlspecialchars($selectedMethod) ?>">
@@ -289,7 +289,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
             </article>
 
             <article class="rounded-3xl bg-zinc-100 p-6">
-                <h2 class="mb-4 text-center text-4xl font-extrabold">Locations</h2>
+                <h2 class="mb-4 text-center text-3xl font-extrabold">Locations</h2>
                 <div class="space-y-2">
                     <?php if ($selectedVersion === ''): ?>
                         <span class="block text-sm text-slate-500">No game version selected.</span>
