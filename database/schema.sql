@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS pokemon (
     pokemon_id INT UNSIGNED NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
     sprite_url VARCHAR(255) NOT NULL,
+    sprite_shiny_url VARCHAR(255) DEFAULT NULL,
     height INT UNSIGNED NOT NULL,
     weight INT UNSIGNED NOT NULL,
     base_experience INT UNSIGNED DEFAULT NULL,
@@ -43,4 +44,18 @@ CREATE TABLE IF NOT EXISTS pokemon_moves (
         level_learned_at
     ),
     CONSTRAINT fk_pokemon_moves_pokemon FOREIGN KEY (pokemon_id) REFERENCES pokemon (pokemon_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS pokemon_evolutions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    evolution_chain_id INT UNSIGNED NOT NULL,
+    from_pokemon_id INT UNSIGNED DEFAULT NULL,
+    to_pokemon_id INT UNSIGNED NOT NULL,
+    stage_depth TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    min_level SMALLINT UNSIGNED DEFAULT NULL,
+    trigger_name VARCHAR(50) DEFAULT NULL,
+    UNIQUE KEY unique_evolution_link (evolution_chain_id, from_pokemon_id, to_pokemon_id),
+    KEY idx_chain_depth (evolution_chain_id, stage_depth),
+    CONSTRAINT fk_evolution_from FOREIGN KEY (from_pokemon_id) REFERENCES pokemon (pokemon_id) ON DELETE CASCADE,
+    CONSTRAINT fk_evolution_to FOREIGN KEY (to_pokemon_id) REFERENCES pokemon (pokemon_id) ON DELETE CASCADE
 );

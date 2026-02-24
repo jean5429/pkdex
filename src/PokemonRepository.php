@@ -69,7 +69,7 @@ final class PokemonRepository
     public function getPokemonDetails(int $pokemonId): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT pokemon_id, name, sprite_url, height, weight, base_experience, updated_at
+            'SELECT pokemon_id, name, sprite_url, sprite_shiny_url, height, weight, base_experience, updated_at
              FROM pokemon
              WHERE pokemon_id = :pokemonId'
         );
@@ -85,6 +85,8 @@ final class PokemonRepository
         $pokemon['types'] = $this->typesByPokemonId($pokemonId);
         $pokemon['stats'] = $this->statsByPokemonId($pokemonId);
         $pokemon['moves'] = $this->movesByPokemonId($pokemonId);
+        $pokemon['neighbors'] = $this->neighborsByPokemonId($pokemonId);
+        $pokemon['evolution_chain'] = $this->evolutionChainByPokemonId($pokemonId);
 
         return $pokemon;
     }
@@ -148,5 +150,58 @@ final class PokemonRepository
         }
 
         return $movesByVersion;
+    }
+
+    /** @return array{previous:array<string,mixed>|null,next:array<string,mixed>|null} */
+    private function neighborsByPokemonId(int $pokemonId): array
+    {
+        $previousStmt = $this->pdo->prepare(
+            'SELECT pokemon_id, name FROM pokemon WHERE pokemon_id < :pokemonId ORDER BY pokemon_id DESC LIMIT 1'
+        );
+        $previousStmt->bindValue(':pokemonId', $pokemonId, PDO::PARAM_INT);
+        $previousStmt->execute();
+
+        $nextStmt = $this->pdo->prepare(
+            'SELECT pokemon_id, name FROM pokemon WHERE pokemon_id > :pokemonId ORDER BY pokemon_id ASC LIMIT 1'
+        );
+        $nextStmt->bindValue(':pokemonId', $pokemonId, PDO::PARAM_INT);
+        $nextStmt->execute();
+
+        return [
+            'previous' => $previousStmt->fetch() ?: null,
+            'next' => $nextStmt->fetch() ?: null,
+        ];
+    }
+
+    /** @return array<int, array<string,mixed>> */
+    private function evolutionChainByPokemonId(int $pokemonId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT evolution_chain_id
+             FROM pokemon_evolutions
+             WHERE to_pokemon_id = :pokemonId OR from_pokemon_id = :pokemonId
+             ORDER BY evolution_chain_id ASC
+             LIMIT 1'
+        );
+        $stmt->bindValue(':pokemonId', $pokemonId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $chainId = $stmt->fetchColumn();
+        if ($chainId === false) {
+            return [];
+        }
+
+        $chainStmt = $this->pdo->prepare(
+            'SELECT e.from_pokemon_id, e.to_pokemon_id, e.stage_depth, e.min_level, e.trigger_name,
+                    p.name, p.sprite_url
+             FROM pokemon_evolutions e
+             INNER JOIN pokemon p ON p.pokemon_id = e.to_pokemon_id
+             WHERE e.evolution_chain_id = :chainId
+             ORDER BY e.stage_depth ASC, e.to_pokemon_id ASC'
+        );
+        $chainStmt->bindValue(':chainId', (int) $chainId, PDO::PARAM_INT);
+        $chainStmt->execute();
+
+        return $chainStmt->fetchAll() ?: [];
     }
 }
