@@ -4,10 +4,10 @@ This project was restructured into a PHP application backed by MySQL.
 
 ## Structure
 
-- `index.php`: main Pokédex page (reads data from database).
+- `index.php`: main Pokédex page with tabs for Pokémon and TM/HM machine coverage.
 - `details.php`: Pokémon detail page (reads stats/moves/types from database).
 - `update_database.php`: manual sync script that fetches data from PokeAPI and upserts local records.
-- `database/schema.sql`: database schema.
+- `database/schema.sql`: database schema (including TM/HM machine table).
 - `src/`: bootstrap, DB connection, and repository logic.
 - `config/config.php`: local configuration.
 
@@ -39,4 +39,4 @@ php -S 0.0.0.0:8000
 
 - The app now serves Pokémon data from MySQL instead of calling PokeAPI on each page load.
 - This improves loading speed and prevents unnecessary PokeAPI requests.
-- Re-run `update_database.php` whenever you want to refresh local data.
+- Re-run `update_database.php` whenever you want to refresh local data (including TM/HM machine mappings).
