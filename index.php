@@ -310,6 +310,31 @@ $palette = pkdexGameVersionPalette();
         }
     }
 
+    function syncUrlWithFilters() {
+        const url = new URL(window.location.href);
+
+        if (searchInput.value.trim() !== '') {
+            url.searchParams.set('search', searchInput.value.trim());
+        } else {
+            url.searchParams.delete('search');
+        }
+
+        if (versionSelect.value !== '') {
+            url.searchParams.set('version', versionSelect.value);
+        } else {
+            url.searchParams.delete('version');
+        }
+
+        if (activeGen !== 'all') {
+            url.searchParams.set('gen', activeGen);
+        } else {
+            url.searchParams.delete('gen');
+        }
+
+        const query = url.searchParams.toString();
+        window.location.href = query === '' ? url.pathname : (url.pathname + '?' + query);
+    }
+
     tabButtons.forEach((button) => {
         button.addEventListener('click', () => {
             activeTab = button.dataset.tab || 'pokemon';
@@ -343,7 +368,7 @@ $palette = pkdexGameVersionPalette();
     }
 
     searchInput.addEventListener('input', applyFilters);
-    versionSelect.addEventListener('change', applyFilters);
+    versionSelect.addEventListener('change', syncUrlWithFilters);
     form.addEventListener('submit', (event) => event.preventDefault());
 
     setActiveTab();
