@@ -7,8 +7,8 @@ return [
         'host' => getenv('DB_HOST') ?: '127.0.0.1',
         'port' => (int) (getenv('DB_PORT') ?: 3306),
         'name' => getenv('DB_NAME') ?: 'pkdex',
-        'user' => getenv('DB_USER') ?: 'root',
-        'password' => getenv('DB_PASSWORD') ?: '',
+        'user' => getenv('DB_USER') ?: 'pkdex_user',
+        'password' => getenv('DB_PASSWORD') ?: 'gJfgjr&84@y4',
         'charset' => 'utf8mb4',
     ],
     'pokeapi' => [
