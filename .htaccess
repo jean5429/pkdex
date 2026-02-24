@@ -1,0 +1,17 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Never expose internal project folders.
+    RewriteRule ^(?:config|database|src)(?:/|$) - [F,L,NC]
+
+    # Block maintenance/import scripts from the web.
+    RewriteRule ^(?:update_database|phpinfo)\.php$ - [F,L,NC]
+
+    # Only allow direct execution of the public entry point.
+    RewriteCond %{REQUEST_URI} !^/index\.php$ [NC]
+    RewriteCond %{REQUEST_URI} !^/$
+    RewriteCond %{REQUEST_URI} \.(?:php|phtml|phar)$ [NC]
+    RewriteRule ^ - [F,L]
+</IfModule>

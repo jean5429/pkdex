@@ -40,3 +40,21 @@ php -S 0.0.0.0:8000
 - The app now serves Pokémon data from MySQL instead of calling PokeAPI on each page load.
 - This improves loading speed and prevents unnecessary PokeAPI requests.
 - Re-run `update_database.php` whenever you want to refresh local data (including TM/HM machine mappings).
+
+## Security hardening
+
+For Apache deployments, keep only `index.php` public and block direct access to internal folders and maintenance scripts:
+
+- Add the provided root `.htaccess` file.
+- Keep `config/`, `database/`, and `src/` outside the web root when possible.
+- `update_database.php` is intended for CLI use only and now rejects web requests.
+
+Example checks after deployment:
+
+```bash
+curl -I http://localhost/config/config.php
+curl -I http://localhost/src/Database.php
+curl -I http://localhost/update_database.php
+```
+
+All should return `403 Forbidden`.
