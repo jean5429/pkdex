@@ -198,11 +198,27 @@ final class PokemonRepository
 
         foreach ($rows as $row) {
             $version = pkdexNormalizeGameVersion((string) $row['game_version']);
+            $locationName = (string) $row['location_name'];
+            $maxChance = isset($row['max_chance']) ? (int) $row['max_chance'] : null;
+
             $locationsByVersion[$version] ??= [];
-            $locationsByVersion[$version][] = [
-                'name' => (string) $row['location_name'],
-                'max_chance' => isset($row['max_chance']) ? (int) $row['max_chance'] : null,
-            ];
+
+            if (!isset($locationsByVersion[$version][$locationName])) {
+                $locationsByVersion[$version][$locationName] = [
+                    'name' => $locationName,
+                    'max_chance' => $maxChance,
+                ];
+                continue;
+            }
+
+            $existingChance = $locationsByVersion[$version][$locationName]['max_chance'];
+            if ($existingChance === null || ($maxChance !== null && $maxChance > $existingChance)) {
+                $locationsByVersion[$version][$locationName]['max_chance'] = $maxChance;
+            }
+        }
+
+        foreach ($locationsByVersion as $version => $locations) {
+            $locationsByVersion[$version] = array_values($locations);
         }
 
         return $locationsByVersion;
