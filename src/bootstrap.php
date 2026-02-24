@@ -13,3 +13,4 @@ $config = require $configFile;
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/PokemonRepository.php';
+require_once __DIR__ . '/GameVersionConfig.php';

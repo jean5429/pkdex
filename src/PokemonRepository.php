@@ -11,26 +11,53 @@ final class PokemonRepository
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function listPokemon(string $search = '', int $limit = 60): array
+    public function listPokemon(string $search = '', ?int $limit = null, array $gameVersions = []): array
     {
         $search = trim($search);
         $params = [];
+        $conditions = [];
 
         $sql = 'SELECT p.pokemon_id, p.name, p.sprite_url, p.base_experience FROM pokemon p';
 
         if ($search !== '') {
-            $sql .= ' WHERE p.name LIKE :term OR CAST(p.pokemon_id AS CHAR) = :idTerm';
+            $conditions[] = '(p.name LIKE :term OR CAST(p.pokemon_id AS CHAR) = :idTerm)';
             $params['term'] = '%' . $search . '%';
             $params['idTerm'] = $search;
         }
 
-        $sql .= ' ORDER BY p.pokemon_id ASC LIMIT :limit';
+        if ($gameVersions !== []) {
+            $placeholders = [];
+            foreach (array_values($gameVersions) as $index => $version) {
+                $key = 'version' . $index;
+                $placeholders[] = ':' . $key;
+                $params[$key] = $version;
+            }
+
+            $conditions[] = 'EXISTS (
+                SELECT 1
+                FROM pokemon_moves pm
+                WHERE pm.pokemon_id = p.pokemon_id
+                AND pm.game_version IN (' . implode(', ', $placeholders) . ')
+            )';
+        }
+
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+
+        $sql .= ' ORDER BY p.pokemon_id ASC';
+
+        if ($limit !== null) {
+            $sql .= ' LIMIT :limit';
+        }
 
         $stmt = $this->pdo->prepare($sql);
         foreach ($params as $key => $value) {
             $stmt->bindValue(':' . $key, $value, PDO::PARAM_STR);
         }
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        }
         $stmt->execute();
 
         $pokemon = $stmt->fetchAll();
