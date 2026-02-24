@@ -91,8 +91,8 @@ foreach ($availableVersions as $versionKey) {
 <main class="mx-auto max-w-6xl p-4 sm:p-6">
     <header class="mb-6">
         <p class="text-blue-600 font-bold tracking-widest text-sm uppercase">📘 PKDex</p>
-        <h1 class="text-2xl font-black sm:text-3xl">🔎 Pokédex from local database</h1>
-        <p class="text-slate-600 mt-2">Data is loaded from MySQL for fast responses and reduced PokeAPI traffic.</p>
+        <h1 class="text-2xl font-black sm:text-3xl">🔎 Pokédex</h1>
+        <p class="text-slate-600 mt-2">Detailed data from the Pokémon world</p>
     </header>
 
     <section class="mb-4 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm" id="content-tabs">
