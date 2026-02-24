@@ -122,13 +122,21 @@ $palette = pkdexGameVersionPalette();
             <?php elseif ($gameTmhm === []): ?>
                 <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM data found for this game version.</p>
             <?php else: ?>
-                <section id="tmhm-grid" class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    <?php foreach ($gameTmhm as $entry): ?>
-                        <article class="tmhm-card bg-white rounded-xl border border-slate-200 p-3 shadow-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>">
-                            <p class="text-xs font-semibold text-slate-500"><?= htmlspecialchars((string) $entry['machine']) ?> · <?= htmlspecialchars((string) $entry['type']) ?></p>
-                            <p class="text-base font-bold capitalize text-slate-900"><?= htmlspecialchars(pkdexFormatGameVersionLabel((string) $entry['name'])) ?></p>
-                        </article>
-                    <?php endforeach; ?>
+                <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="grid grid-cols-3 gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">
+                        <p>Type</p>
+                        <p>Number</p>
+                        <p>Name</p>
+                    </div>
+                    <ul id="tmhm-grid" class="divide-y divide-slate-100">
+                        <?php foreach ($gameTmhm as $entry): ?>
+                            <li class="tmhm-card grid grid-cols-3 gap-2 px-3 py-2 text-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>" data-machine-number="<?= (int) $entry['number'] ?>">
+                                <p class="font-semibold text-slate-700"><?= htmlspecialchars((string) $entry['type']) ?></p>
+                                <p class="font-mono text-slate-600"><?= (int) $entry['number'] ?></p>
+                                <p class="font-semibold capitalize text-slate-900"><?= htmlspecialchars(pkdexFormatGameVersionLabel((string) $entry['name'])) ?></p>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
                 </section>
                 <p id="tmhm-filter-empty-message" class="hidden mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM entries match the selected type filter.</p>
             <?php endif; ?>
@@ -158,8 +166,16 @@ $palette = pkdexGameVersionPalette();
         ];
     }, $deferredPokemon), JSON_THROW_ON_ERROR) ?>;
 
+    const STORAGE_VERSION_KEY = 'pkdex:selectedVersion';
+    const STORAGE_TAB_KEY = 'pkdex:activeTab';
+    const initialUrl = new URL(window.location.href);
+    const queryTab = initialUrl.searchParams.get('tab');
+    const savedTab = window.localStorage.getItem(STORAGE_TAB_KEY);
+
     let activeGen = <?= json_encode($selectedGen, JSON_THROW_ON_ERROR) ?>;
-    let activeTab = 'pokemon';
+    let activeTab = (queryTab === 'pokemon' || queryTab === 'tmhm')
+        ? queryTab
+        : ((savedTab === 'pokemon' || savedTab === 'tmhm') ? savedTab : 'pokemon');
     let activeTmhmType = 'all';
 
     function getCards() {
@@ -310,6 +326,33 @@ $palette = pkdexGameVersionPalette();
         }
     }
 
+
+    function initializeSavedVersion() {
+        const savedVersion = window.localStorage.getItem(STORAGE_VERSION_KEY);
+        const hasSelectedVersion = versionSelect.value !== '';
+
+        if (hasSelectedVersion) {
+            return;
+        }
+
+        if (!savedVersion) {
+            return;
+        }
+
+        const hasOption = Array.from(versionSelect.options).some((option) => option.value === savedVersion);
+        if (!hasOption) {
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('version', savedVersion);
+        if (activeTab !== 'pokemon') {
+            url.searchParams.set('tab', activeTab);
+        }
+
+        const query = url.searchParams.toString();
+        window.location.replace(query === '' ? url.pathname : (url.pathname + '?' + query));
+    }
     function syncUrlWithFilters() {
         const url = new URL(window.location.href);
 
@@ -331,6 +374,20 @@ $palette = pkdexGameVersionPalette();
             url.searchParams.delete('gen');
         }
 
+        if (activeTab !== 'pokemon') {
+            url.searchParams.set('tab', activeTab);
+        } else {
+            url.searchParams.delete('tab');
+        }
+
+        if (versionSelect.value !== '') {
+            window.localStorage.setItem(STORAGE_VERSION_KEY, versionSelect.value);
+        } else {
+            window.localStorage.removeItem(STORAGE_VERSION_KEY);
+        }
+
+        window.localStorage.setItem(STORAGE_TAB_KEY, activeTab);
+
         const query = url.searchParams.toString();
         window.location.href = query === '' ? url.pathname : (url.pathname + '?' + query);
     }
@@ -338,6 +395,7 @@ $palette = pkdexGameVersionPalette();
     tabButtons.forEach((button) => {
         button.addEventListener('click', () => {
             activeTab = button.dataset.tab || 'pokemon';
+            window.localStorage.setItem(STORAGE_TAB_KEY, activeTab);
             setActiveTab();
         });
     });
@@ -371,6 +429,8 @@ $palette = pkdexGameVersionPalette();
     versionSelect.addEventListener('change', syncUrlWithFilters);
     form.addEventListener('submit', (event) => event.preventDefault());
 
+    initializeSavedVersion();
+    window.localStorage.setItem(STORAGE_TAB_KEY, activeTab);
     setActiveTab();
     setActiveGenButton();
     applyFilters();
