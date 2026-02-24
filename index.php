@@ -429,12 +429,6 @@ foreach ($availableVersions as $versionKey) {
 
         loadingOverlay.classList.add('hidden');
         loadingOverlay.setAttribute('aria-hidden', 'true');
-
-        window.setTimeout(() => {
-            if (loadingOverlay && loadingOverlay.parentNode) {
-                loadingOverlay.parentNode.removeChild(loadingOverlay);
-            }
-        }, 220);
     }
 
     function syncUrlWithFilters() {
