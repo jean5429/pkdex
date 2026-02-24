@@ -79,7 +79,7 @@ foreach ($availableVersions as $versionKey) {
 
     <form method="get" id="filters-form" class="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <input type="hidden" id="active-tab-input" name="tab" value="<?= isset($_GET['tab']) ? htmlspecialchars((string) $_GET['tab']) : '' ?>">
-        <div class="grid gap-4 md:grid-cols-2">
+        <div class="grid gap-4">
             <div>
                 <label for="search" class="font-semibold text-sm">Search by name or number</label>
                 <input id="search" name="search" value="<?= htmlspecialchars($search) ?>" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="pikachu or 25">
