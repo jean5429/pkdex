@@ -29,9 +29,7 @@ $formatMachineType = static function (string $moveName): string {
 $selectedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
 $selectedMethod = isset($_GET['method']) ? trim((string) $_GET['method']) : 'level-up';
 $availableMethods = ['level-up', 'machine'];
-$palette = pkdexGameVersionPalette();
 $allowedVersions = pkdexGameVersions();
-$versionStyleMap = [];
 
 if (!in_array($selectedMethod, $availableMethods, true)) {
     $selectedMethod = 'level-up';
@@ -48,16 +46,6 @@ if ($pokemon !== null) {
         $selectedVersion = $versionGroups[0] ?? '';
     }
 
-    foreach ($versionGroups as $versionKey) {
-        $color = $palette[$versionKey] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a'];
-        $bg = isset($color['bg_secondary'])
-            ? 'linear-gradient(90deg, ' . $color['bg'] . ' 0%, ' . $color['bg_secondary'] . ' 100%)'
-            : $color['bg'];
-        $versionStyleMap[$versionKey] = [
-            'bg' => $bg,
-            'text' => $color['text'],
-        ];
-    }
 }
 
 $currentMoves = [];
@@ -295,20 +283,13 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                     <div class="flex flex-col gap-3 md:flex-row md:items-end">
                         <div class="w-full md:max-w-sm">
                             <label class="text-sm font-semibold text-slate-700">🎮 Select Version:</label>
-                            <input type="hidden" id="version" name="version" value="<?= htmlspecialchars($selectedVersion) ?>">
-                            <div id="version-selector" class="mt-1 flex flex-wrap gap-2 rounded-lg border border-slate-300 bg-white p-2">
+                            <select id="version" name="version" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
                                 <?php foreach ($versionGroups as $version): ?>
-                                    <?php $style = $versionStyleMap[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
-                                    <button
-                                        type="button"
-                                        data-version-option="<?= htmlspecialchars($version) ?>"
-                                        class="version-option rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold <?= $version === $selectedVersion ? 'ring-2 ring-blue-500' : '' ?>"
-                                        style="background: <?= htmlspecialchars($style['bg']) ?>; color: <?= htmlspecialchars($style['text']) ?>"
-                                    >
+                                    <option value="<?= htmlspecialchars($version) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
                                         <?= htmlspecialchars($formatLabel((string) $version)) ?>
-                                    </button>
+                                    </option>
                                 <?php endforeach; ?>
-                            </div>
+                            </select>
                         </div>
                         <div class="flex flex-wrap items-center justify-center gap-2 md:ml-auto" id="move-method-switcher">
                             <button type="button" data-method="level-up" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">Level Up</button>
@@ -386,8 +367,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
             const secondaryHeader = document.getElementById('moves-secondary-header');
             const methodSwitcher = document.getElementById('move-method-switcher');
             const methodInput = document.querySelector('input[name="method"]');
-            const versionInput = document.getElementById('version');
-            const versionButtons = document.querySelectorAll('.version-option');
+            const versionSelect = document.getElementById('version');
 
             if (!moveTableBody || !secondaryHeader || !methodSwitcher || !methodInput) {
                 return;
@@ -449,14 +429,8 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 });
             });
 
-            versionButtons.forEach((button) => {
-                button.addEventListener('click', () => {
-                    if (!versionInput) {
-                        return;
-                    }
-                    versionInput.value = button.dataset.versionOption || '';
-                    button.closest('form')?.submit();
-                });
+            versionSelect?.addEventListener('change', () => {
+                versionSelect.form?.submit();
             });
 
             setActiveMethod(methodInput.value || 'level-up');
