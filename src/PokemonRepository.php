@@ -111,12 +111,15 @@ final class PokemonRepository
         usort(
             $entries,
             static function (array $a, array $b): int {
-                if ($a['number'] !== $b['number']) {
-                    return $a['number'] <=> $b['number'];
+                $typeRankA = $a['type'] === 'HM' ? 0 : 1;
+                $typeRankB = $b['type'] === 'HM' ? 0 : 1;
+
+                if ($typeRankA !== $typeRankB) {
+                    return $typeRankA <=> $typeRankB;
                 }
 
-                if ($a['type'] !== $b['type']) {
-                    return $a['type'] <=> $b['type'];
+                if ($a['number'] !== $b['number']) {
+                    return $a['number'] <=> $b['number'];
                 }
 
                 return $a['name'] <=> $b['name'];
