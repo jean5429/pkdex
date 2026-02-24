@@ -75,7 +75,7 @@ final class PokemonRepository
 
 
     /**
-     * @return array<int, array{name:string,machine:string,type:string}>
+     * @return array<int, array{name:string,machine:string,type:string,number:int}>
      */
     public function listGameTmHm(string $gameVersion): array
     {
@@ -92,18 +92,38 @@ final class PokemonRepository
 
         $rows = $stmt->fetchAll() ?: [];
 
-        return array_map(
+        $entries = array_map(
             static function (array $row): array {
                 $machine = strtoupper((string) $row['machine_name']);
+                preg_match('/(\d+)/', $machine, $matches);
+                $number = isset($matches[1]) ? (int) $matches[1] : 0;
 
                 return [
                     'name' => (string) $row['move_name'],
                     'machine' => $machine,
                     'type' => str_starts_with($machine, 'HM') ? 'HM' : 'TM',
+                    'number' => $number,
                 ];
             },
             $rows
         );
+
+        usort(
+            $entries,
+            static function (array $a, array $b): int {
+                if ($a['number'] !== $b['number']) {
+                    return $a['number'] <=> $b['number'];
+                }
+
+                if ($a['type'] !== $b['type']) {
+                    return $a['type'] <=> $b['type'];
+                }
+
+                return $a['name'] <=> $b['name'];
+            }
+        );
+
+        return $entries;
     }
 
     /** @return array<int, string> */
