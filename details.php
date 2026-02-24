@@ -167,29 +167,29 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-zinc-200 text-slate-800">
-<main class="mx-auto max-w-7xl p-6">
+<main class="mx-auto max-w-7xl p-4 sm:p-6">
     <?php if ($pokemon === null): ?>
         <section class="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-red-900">
             Pokémon not found in database.
         </section>
     <?php else: ?>
         <header class="text-center">
-            <h1 class="text-3xl font-extrabold tracking-tight capitalize md:text-5xl"><?= htmlspecialchars((string) $pokemon['name']) ?> <span class="text-blue-600">#<?= (int) $pokemon['pokemon_id'] ?></span></h1>
+            <h1 class="text-2xl font-extrabold tracking-tight capitalize sm:text-3xl md:text-5xl"><?= htmlspecialchars((string) $pokemon['name']) ?> <span class="text-blue-600">#<?= (int) $pokemon['pokemon_id'] ?></span></h1>
             <div class="mt-6">
-                <a href="index.php?version=<?= urlencode($selectedVersion) ?>" class="rounded-xl bg-blue-600 px-8 py-3 text-lg font-bold text-white shadow">← Back to Main List</a>
+                <a href="index.php?version=<?= urlencode($selectedVersion) ?>" class="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-base font-bold text-white shadow sm:w-auto sm:px-8 sm:text-lg">← Back to Main List</a>
             </div>
-            <div class="mt-5 flex justify-center gap-4 text-base font-semibold md:text-xl">
+            <div class="mt-5 flex flex-wrap justify-center gap-3 text-sm font-semibold sm:text-base md:text-xl">
                 <?php if ($pokemon['neighbors']['previous'] !== null): ?>
                     <a href="details.php?id=<?= (int) $pokemon['neighbors']['previous']['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="rounded-xl bg-zinc-300 px-5 py-2 hover:bg-zinc-400">← <?= htmlspecialchars($formatLabel((string) $pokemon['neighbors']['previous']['name'])) ?> #<?= (int) $pokemon['neighbors']['previous']['pokemon_id'] ?></a>
                 <?php endif; ?>
                 <?php if ($pokemon['neighbors']['next'] !== null): ?>
-                    <a href="details.php?id=<?= (int) $pokemon['neighbors']['next']['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="rounded-xl bg-zinc-300 px-5 py-2 hover:bg-zinc-400">#<?= (int) $pokemon['neighbors']['next']['pokemon_id'] ?><?= htmlspecialchars($formatLabel((string) $pokemon['neighbors']['next']['name'])) ?> →</a>
+                    <a href="details.php?id=<?= (int) $pokemon['neighbors']['next']['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="rounded-xl bg-zinc-300 px-5 py-2 hover:bg-zinc-400">#<?= (int) $pokemon['neighbors']['next']['pokemon_id'] ?> <?= htmlspecialchars($formatLabel((string) $pokemon['neighbors']['next']['name'])) ?> →</a>
                 <?php endif; ?>
             </div>
         </header>
 
-        <section class="mt-10 grid gap-6 xl:grid-cols-3">
-            <article class="rounded-3xl bg-zinc-100 p-8">
+        <section class="mt-8 grid gap-4 sm:gap-6 xl:grid-cols-3">
+            <article class="rounded-3xl bg-zinc-100 p-5 sm:p-8">
                 <h2 class="text-center text-2xl font-bold">Basic Info</h2>
                 <div class="mt-6 grid grid-cols-2 text-center">
                     <p class="text-xl font-semibold">Normal</p>
@@ -200,7 +200,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                     <img src="<?= htmlspecialchars($officialArtworkShinyUrl) ?>" alt="shiny sprite" class="mx-auto h-40 w-40 object-contain md:h-52 md:w-52" loading="lazy">
                 </div>
                 <h3 class="mt-6 text-center text-2xl font-bold capitalize"><?= htmlspecialchars((string) $pokemon['name']) ?></h3>
-                <p class="mt-3 text-center text-xl">Height: <?= number_format(((int) $pokemon['height']) / 10, 2) ?> m | Weight: <?= number_format(((int) $pokemon['weight']) / 10, 2) ?> kg</p>
+                <p class="mt-3 text-center text-base sm:text-xl">Height: <?= number_format(((int) $pokemon['height']) / 10, 2) ?> m | Weight: <?= number_format(((int) $pokemon['weight']) / 10, 2) ?> kg</p>
                 <div class="mt-5 flex flex-wrap justify-center gap-2">
                     <?php foreach ($pokemon['types'] as $type): ?>
                         <?php $typeKey = strtolower((string) $type); ?>
@@ -209,7 +209,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 </div>
             </article>
 
-            <article class="rounded-3xl bg-zinc-100 p-8">
+            <article class="rounded-3xl bg-zinc-100 p-5 sm:p-8">
                 <h2 class="text-center text-2xl font-bold">Stats</h2>
                 <ul class="mt-6 space-y-3">
                     <?php foreach ($pokemon['stats'] as $stat): ?>
@@ -219,7 +219,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                         $barWidth = min(100, (int) round(($value / 150) * 100));
                         $barColor = $statColors[$statName] ?? 'bg-red-500';
                         ?>
-                        <li class="grid grid-cols-[70px_1fr_34px] items-center gap-3 text-lg font-semibold md:grid-cols-[90px_1fr_50px] md:text-2xl">
+                        <li class="grid grid-cols-[64px_1fr_34px] items-center gap-2 text-base font-semibold sm:gap-3 sm:text-lg md:grid-cols-[90px_1fr_50px] md:text-2xl">
                             <span><?= htmlspecialchars($statLabels[$statName] ?? $formatLabel($statName)) ?>:</span>
                             <div class="h-6 rounded-full bg-slate-300 md:h-7">
                                 <div class="h-6 rounded-full <?= $barColor ?> md:h-7" style="width: <?= $barWidth ?>%"></div>
@@ -249,7 +249,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 </div>
             </article>
 
-            <article class="rounded-3xl bg-zinc-100 p-8">
+            <article class="rounded-3xl bg-zinc-100 p-5 sm:p-8">
                 <h2 class="text-center text-2xl font-bold">Evolution Tree</h2>
                 <?php if ($pokemon['evolution_chain'] === []): ?>
                     <p class="mt-6 text-center text-xl text-slate-600">No evolution chain in database yet. Run <code>php update_database.php</code> to sync species and evolution data.</p>
@@ -273,7 +273,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 <?php endif; ?>
             </article>
         </section>
-        <section class="mt-6 grid gap-6 lg:grid-cols-3 lg:items-start">
+        <section class="mt-6 grid gap-4 sm:gap-6 lg:grid-cols-3 lg:items-start">
             <article class="rounded-3xl bg-zinc-100 p-6 lg:col-span-2">
                 <h2 class="mb-2 text-3xl font-extrabold">Moves</h2>
                 <form method="get" class="mt-3">
@@ -291,15 +291,15 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="flex items-center justify-center gap-2 md:ml-auto" id="move-method-switcher">
+                        <div class="flex flex-wrap items-center justify-center gap-2 md:ml-auto" id="move-method-switcher">
                             <button type="button" data-method="level-up" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">Level Up</button>
                             <button type="button" data-method="machine" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'machine' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">TM/HM</button>
                         </div>
                     </div>
                 </form>
 
-                <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-                    <table class="w-full text-sm">
+                <div class="mt-4 overflow-x-auto rounded-2xl border border-slate-200">
+                    <table class="min-w-[360px] w-full text-sm">
                         <thead>
                         <tr class="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-700">
                             <th class="px-4 py-3">Move name</th>
