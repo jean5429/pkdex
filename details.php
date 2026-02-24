@@ -107,6 +107,10 @@ $typeColors = [
     'normal' => 'bg-zinc-400',
 ];
 
+$artworkBaseUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/';
+$officialArtworkUrl = $artworkBaseUrl . ($pokemon !== null ? (int) $pokemon['pokemon_id'] : 0) . '.png';
+$officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (int) $pokemon['pokemon_id'] : 0) . '.png';
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -124,11 +128,11 @@ $typeColors = [
         </section>
     <?php else: ?>
         <header class="text-center">
-            <h1 class="text-6xl font-black tracking-tight capitalize"><?= htmlspecialchars((string) $pokemon['name']) ?> <span class="text-blue-600">#<?= (int) $pokemon['pokemon_id'] ?></span></h1>
+            <h1 class="text-5xl font-extrabold tracking-tight capitalize md:text-6xl"><?= htmlspecialchars((string) $pokemon['name']) ?> <span class="text-blue-600">#<?= (int) $pokemon['pokemon_id'] ?></span></h1>
             <div class="mt-8">
-                <a href="index.php?version=<?= urlencode($selectedVersion) ?>" class="rounded-xl bg-blue-600 px-8 py-4 text-2xl font-bold text-white shadow">← Back to Main List</a>
+                <a href="index.php?version=<?= urlencode($selectedVersion) ?>" class="rounded-xl bg-blue-600 px-8 py-4 text-xl font-bold text-white shadow">← Back to Main List</a>
             </div>
-            <div class="mt-8 flex justify-center gap-4 text-3xl font-bold">
+            <div class="mt-8 flex justify-center gap-4 text-2xl font-semibold md:text-3xl">
                 <?php if ($pokemon['neighbors']['previous'] !== null): ?>
                     <a href="details.php?id=<?= (int) $pokemon['neighbors']['previous']['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="rounded-xl bg-zinc-300 px-6 py-3 hover:bg-zinc-400">← <?= htmlspecialchars($formatLabel((string) $pokemon['neighbors']['previous']['name'])) ?> #<?= (int) $pokemon['neighbors']['previous']['pokemon_id'] ?></a>
                 <?php endif; ?>
@@ -140,27 +144,27 @@ $typeColors = [
 
         <section class="mt-10 grid gap-6 xl:grid-cols-3">
             <article class="rounded-3xl bg-zinc-100 p-8">
-                <h2 class="text-5xl font-black text-center">Basic Info</h2>
+                <h2 class="text-center text-4xl font-bold">Basic Info</h2>
                 <div class="mt-6 grid grid-cols-2 text-center">
-                    <p class="text-4xl font-bold">Normal</p>
-                    <p class="text-4xl font-bold">Shiny</p>
+                    <p class="text-3xl font-semibold">Normal</p>
+                    <p class="text-3xl font-semibold">Shiny</p>
                 </div>
                 <div class="mt-4 grid grid-cols-2 items-center gap-2">
-                    <img src="<?= htmlspecialchars((string) $pokemon['sprite_url']) ?>" alt="normal sprite" class="mx-auto h-52 w-52">
-                    <img src="<?= htmlspecialchars((string) ($pokemon['sprite_shiny_url'] ?: $pokemon['sprite_url'])) ?>" alt="shiny sprite" class="mx-auto h-52 w-52">
+                    <img src="<?= htmlspecialchars($officialArtworkUrl) ?>" alt="normal sprite" class="mx-auto h-52 w-52 object-contain" loading="lazy">
+                    <img src="<?= htmlspecialchars($officialArtworkShinyUrl) ?>" alt="shiny sprite" class="mx-auto h-52 w-52 object-contain" loading="lazy">
                 </div>
-                <h3 class="mt-6 text-center text-5xl font-bold capitalize"><?= htmlspecialchars((string) $pokemon['name']) ?></h3>
-                <p class="mt-3 text-center text-3xl">Height: <?= number_format(((int) $pokemon['height']) / 10, 2) ?> m | Weight: <?= number_format(((int) $pokemon['weight']) / 10, 2) ?> kg</p>
+                <h3 class="mt-6 text-center text-4xl font-bold capitalize"><?= htmlspecialchars((string) $pokemon['name']) ?></h3>
+                <p class="mt-3 text-center text-2xl">Height: <?= number_format(((int) $pokemon['height']) / 10, 2) ?> m | Weight: <?= number_format(((int) $pokemon['weight']) / 10, 2) ?> kg</p>
                 <div class="mt-5 flex flex-wrap justify-center gap-2">
                     <?php foreach ($pokemon['types'] as $type): ?>
                         <?php $typeKey = strtolower((string) $type); ?>
-                        <span class="rounded-full px-5 py-2 text-2xl font-bold text-white <?= $typeColors[$typeKey] ?? 'bg-slate-500' ?>"><?= htmlspecialchars($formatLabel((string) $type)) ?></span>
+                        <span class="rounded-full px-5 py-2 text-xl font-bold text-white <?= $typeColors[$typeKey] ?? 'bg-slate-500' ?>"><?= htmlspecialchars($formatLabel((string) $type)) ?></span>
                     <?php endforeach; ?>
                 </div>
             </article>
 
             <article class="rounded-3xl bg-zinc-100 p-8">
-                <h2 class="text-center text-5xl font-black">Stats</h2>
+                <h2 class="text-center text-4xl font-bold">Stats</h2>
                 <ul class="mt-6 space-y-3">
                     <?php foreach ($pokemon['stats'] as $stat): ?>
                         <?php
@@ -179,7 +183,7 @@ $typeColors = [
                     <?php endforeach; ?>
                 </ul>
 
-                <h3 class="mt-8 text-center text-5xl font-black">Type Effectiveness</h3>
+                <h3 class="mt-8 text-center text-4xl font-bold">Type Effectiveness</h3>
                 <div class="mt-6">
                     <p class="text-4xl font-bold">Weaknesses:</p>
                     <div class="mt-3 flex flex-wrap gap-2">
@@ -200,15 +204,17 @@ $typeColors = [
             </article>
 
             <article class="rounded-3xl bg-zinc-100 p-8">
-                <h2 class="text-center text-5xl font-black">Evolution Tree</h2>
+                <h2 class="text-center text-4xl font-bold">Evolution Tree</h2>
                 <?php if ($pokemon['evolution_chain'] === []): ?>
                     <p class="mt-6 text-center text-xl text-slate-600">No evolution chain in database yet. Run <code>php update_database.php</code> to sync species and evolution data.</p>
                 <?php else: ?>
                     <div class="mt-6 space-y-6 text-center">
                         <?php foreach ($pokemon['evolution_chain'] as $index => $stage): ?>
                             <div>
-                                <img src="<?= htmlspecialchars((string) $stage['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $stage['name']) ?>" class="mx-auto h-24 w-24">
-                                <p class="text-4xl capitalize <?= (int) $stage['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-black text-emerald-600' : '' ?>"><?= htmlspecialchars((string) $stage['name']) ?></p>
+                                <a href="details.php?id=<?= (int) $stage['to_pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="inline-block transition hover:scale-105" title="View <?= htmlspecialchars($formatLabel((string) $stage['name'])) ?> details">
+                                    <img src="<?= htmlspecialchars((string) $stage['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $stage['name']) ?>" class="mx-auto h-24 w-24">
+                                    <p class="text-3xl capitalize <?= (int) $stage['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-bold text-emerald-600' : 'font-medium text-slate-700 hover:text-blue-600' ?>"><?= htmlspecialchars((string) $stage['name']) ?></p>
+                                </a>
                                 <?php if ($stage['min_level'] !== null): ?>
                                     <p class="text-2xl text-slate-500">(Lv. <?= (int) $stage['min_level'] ?>)</p>
                                 <?php endif; ?>
