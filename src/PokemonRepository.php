@@ -74,49 +74,36 @@ final class PokemonRepository
     }
 
 
-
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{name:string,machine:string,type:string}>
      */
-    public function listPokemonTmHm(string $search = ''): array
+    public function listGameTmHm(string $gameVersion): array
     {
-        $search = trim($search);
-        $params = [];
-        $conditions = [];
+        $normalizedVersion = pkdexNormalizeGameVersion($gameVersion);
 
-        $sql = 'SELECT p.pokemon_id, p.name, p.sprite_url FROM pokemon p WHERE EXISTS (SELECT 1 FROM pokemon_tmhm t WHERE t.pokemon_id = p.pokemon_id)';
-
-        if ($search !== '') {
-            $conditions[] = '(p.name LIKE :term OR CAST(p.pokemon_id AS CHAR) = :idTerm)';
-            $params['term'] = '%' . $search . '%';
-            $params['idTerm'] = $search;
-        }
-
-        if ($conditions !== []) {
-            $sql .= ' AND ' . implode(' AND ', $conditions);
-        }
-
-        $sql .= ' ORDER BY p.pokemon_id ASC';
-
-        $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => $value) {
-            $stmt->bindValue(':' . $key, $value, PDO::PARAM_STR);
-        }
+        $stmt = $this->pdo->prepare(
+            'SELECT move_name, machine_name
+             FROM game_tmhm
+             WHERE game_version = :game_version
+             ORDER BY machine_name ASC, move_name ASC'
+        );
+        $stmt->bindValue(':game_version', $normalizedVersion, PDO::PARAM_STR);
         $stmt->execute();
 
-        $pokemon = $stmt->fetchAll();
+        $rows = $stmt->fetchAll() ?: [];
 
-        if ($pokemon === false) {
-            return [];
-        }
+        return array_map(
+            static function (array $row): array {
+                $machine = strtoupper((string) $row['machine_name']);
 
-        foreach ($pokemon as &$item) {
-            $pokemonId = (int) $item['pokemon_id'];
-            $item['types'] = $this->typesByPokemonId($pokemonId);
-            $item['tmhm'] = $this->tmhmByPokemonId($pokemonId);
-        }
-
-        return $pokemon;
+                return [
+                    'name' => (string) $row['move_name'],
+                    'machine' => $machine,
+                    'type' => str_starts_with($machine, 'HM') ? 'HM' : 'TM',
+                ];
+            },
+            $rows
+        );
     }
 
     /** @return array<int, string> */
@@ -226,32 +213,6 @@ final class PokemonRepository
         return $movesByVersion;
     }
 
-
-    /** @return array<string, array<int, string>> */
-    private function tmhmByPokemonId(int $pokemonId): array
-    {
-        $stmt = $this->pdo->prepare(
-            'SELECT move_name, machine_name, game_version
-             FROM pokemon_tmhm
-             WHERE pokemon_id = :pokemonId
-             ORDER BY game_version ASC, machine_name ASC, move_name ASC'
-        );
-        $stmt->bindValue(':pokemonId', $pokemonId, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $rows = $stmt->fetchAll() ?: [];
-        $movesByVersion = [];
-
-        foreach ($rows as $row) {
-            $version = pkdexNormalizeGameVersion((string) $row['game_version']);
-            $machine = strtoupper((string) $row['machine_name']);
-            $moveName = str_replace('-', ' ', (string) $row['move_name']);
-            $movesByVersion[$version] ??= [];
-            $movesByVersion[$version][] = sprintf('%s — %s', $machine, ucwords($moveName));
-        }
-
-        return $movesByVersion;
-    }
 
 
     /** @return array<string, array<int, array{name:string,max_chance:int|null}>> */

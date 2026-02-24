@@ -16,6 +16,7 @@ $pdo->exec($schemaSql);
 
 // Lightweight compatibility migration for existing installations.
 $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS sprite_shiny_url VARCHAR(255) DEFAULT NULL');
+$pdo->exec('CREATE TABLE IF NOT EXISTS game_tmhm (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, move_name VARCHAR(100) NOT NULL, machine_name VARCHAR(100) NOT NULL, game_version VARCHAR(80) NOT NULL, UNIQUE KEY unique_tmhm_per_version (move_name, machine_name, game_version))');
 
 $baseUrl = rtrim((string) $config['pokeapi']['base_url'], '/');
 $limit = (int) $config['pokeapi']['limit'];
@@ -71,6 +72,12 @@ $locationStmt = $pdo->prepare(
 $tmhmStmt = $pdo->prepare(
     'INSERT INTO pokemon_tmhm (pokemon_id, move_name, machine_name, game_version)
      VALUES (:pokemon_id, :move_name, :machine_name, :game_version)
+     ON DUPLICATE KEY UPDATE machine_name = VALUES(machine_name)'
+);
+
+$gameTmhmStmt = $pdo->prepare(
+    'INSERT INTO game_tmhm (move_name, machine_name, game_version)
+     VALUES (:move_name, :machine_name, :game_version)
      ON DUPLICATE KEY UPDATE machine_name = VALUES(machine_name)'
 );
 
@@ -192,10 +199,18 @@ foreach ($listResponse['results'] as $item) {
                     continue;
                 }
 
+                $normalizedMachine = strtoupper(str_replace('-', '', $machineName));
+
                 $tmhmStmt->execute([
                     ':pokemon_id' => $pokemonId,
                     ':move_name' => $moveName,
-                    ':machine_name' => strtoupper(str_replace('-', '', $machineName)),
+                    ':machine_name' => $normalizedMachine,
+                    ':game_version' => $versionGroup,
+                ]);
+
+                $gameTmhmStmt->execute([
+                    ':move_name' => $moveName,
+                    ':machine_name' => $normalizedMachine,
                     ':game_version' => $versionGroup,
                 ]);
             }
