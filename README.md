@@ -13,7 +13,7 @@ This project was restructured into a PHP application backed by MySQL.
 
 ## Setup
 
-1. Configure database values in `config/config.php`.
+1. Configure database values in `config/config.php` **or** copy `.env.example` to `.env` and set `DB_PASSWORD` (and any other DB variables) for your environment.
 2. Create an empty MySQL database (default name: `pkdex`).
 3. Run the manual sync script:
 
