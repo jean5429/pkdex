@@ -66,6 +66,14 @@ CREATE TABLE IF NOT EXISTS pokemon_tmhm (
     CONSTRAINT fk_pokemon_tmhm_pokemon FOREIGN KEY (pokemon_id) REFERENCES pokemon (pokemon_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS game_tmhm (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    move_name VARCHAR(100) NOT NULL,
+    machine_name VARCHAR(100) NOT NULL,
+    game_version VARCHAR(80) NOT NULL,
+    UNIQUE KEY unique_tmhm_per_version (move_name, machine_name, game_version)
+);
+
 CREATE TABLE IF NOT EXISTS pokemon_evolutions (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     evolution_chain_id INT UNSIGNED NOT NULL,
