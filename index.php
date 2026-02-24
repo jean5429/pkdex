@@ -67,6 +67,7 @@ $palette = pkdexGameVersionPalette();
     </section>
 
     <form method="get" id="filters-form" class="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <input type="hidden" id="active-tab-input" name="tab" value="<?= isset($_GET['tab']) ? htmlspecialchars((string) $_GET['tab']) : '' ?>">
         <div class="grid gap-4 md:grid-cols-2">
             <div>
                 <label for="search" class="font-semibold text-sm">Search by name or number</label>
@@ -148,6 +149,7 @@ $palette = pkdexGameVersionPalette();
     const form = document.getElementById('filters-form');
     const searchInput = document.getElementById('search');
     const versionSelect = document.getElementById('version');
+    const activeTabInput = document.getElementById('active-tab-input');
     const genButtons = document.querySelectorAll('.gen-filter-btn');
     const tabButtons = document.querySelectorAll('.tab-btn');
     const pokemonPanel = document.getElementById('pokemon-panel');
@@ -260,6 +262,10 @@ $palette = pkdexGameVersionPalette();
     }
 
     function setActiveTab() {
+        if (activeTabInput) {
+            activeTabInput.value = activeTab === 'pokemon' ? '' : activeTab;
+        }
+
         tabButtons.forEach((button) => {
             const isActive = button.dataset.tab === activeTab;
             button.classList.toggle('bg-blue-600', isActive);
