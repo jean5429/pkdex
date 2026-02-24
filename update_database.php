@@ -61,9 +61,17 @@ $moveStmt = $pdo->prepare(
      ON DUPLICATE KEY UPDATE move_name = VALUES(move_name)'
 );
 
+
+$locationStmt = $pdo->prepare(
+    'INSERT INTO pokemon_locations (pokemon_id, game_version, location_name, max_chance)
+     VALUES (:pokemon_id, :game_version, :location_name, :max_chance)
+     ON DUPLICATE KEY UPDATE max_chance = VALUES(max_chance)'
+);
+
 $deleteTypesStmt = $pdo->prepare('DELETE FROM pokemon_types WHERE pokemon_id = :pokemon_id');
 $deleteStatsStmt = $pdo->prepare('DELETE FROM pokemon_stats WHERE pokemon_id = :pokemon_id');
 $deleteMovesStmt = $pdo->prepare('DELETE FROM pokemon_moves WHERE pokemon_id = :pokemon_id');
+$deleteLocationsStmt = $pdo->prepare('DELETE FROM pokemon_locations WHERE pokemon_id = :pokemon_id');
 
 $evolutionDeleteStmt = $pdo->prepare('DELETE FROM pokemon_evolutions WHERE evolution_chain_id = :chain_id');
 $evolutionInsertStmt = $pdo->prepare(
@@ -136,6 +144,42 @@ foreach ($listResponse['results'] as $item) {
                     ':level_learned_at' => (int) ($detail['level_learned_at'] ?? 0),
                     ':game_version' => (string) ($detail['version_group']['name'] ?? 'unknown'),
                 ]);
+            }
+        }
+
+        $deleteLocationsStmt->execute([':pokemon_id' => $pokemonId]);
+        $locationAreasData = apiGet(sprintf('%s/pokemon/%d/encounters', $baseUrl, $pokemonId));
+        if (is_array($locationAreasData)) {
+            foreach ($locationAreasData as $encounterArea) {
+                if (!is_array($encounterArea)) {
+                    continue;
+                }
+
+                $locationName = (string) ($encounterArea['location_area']['name'] ?? 'unknown');
+                foreach (($encounterArea['version_details'] ?? []) as $versionDetail) {
+                    if (!is_array($versionDetail)) {
+                        continue;
+                    }
+
+                    $maxChance = null;
+                    foreach (($versionDetail['encounter_details'] ?? []) as $encounterDetail) {
+                        if (!is_array($encounterDetail)) {
+                            continue;
+                        }
+
+                        $chance = isset($encounterDetail['chance']) ? (int) $encounterDetail['chance'] : null;
+                        if ($chance !== null) {
+                            $maxChance = $maxChance === null ? $chance : max($maxChance, $chance);
+                        }
+                    }
+
+                    $locationStmt->execute([
+                        ':pokemon_id' => $pokemonId,
+                        ':game_version' => (string) ($versionDetail['version']['name'] ?? 'unknown'),
+                        ':location_name' => $locationName,
+                        ':max_chance' => $maxChance,
+                    ]);
+                }
             }
         }
 
