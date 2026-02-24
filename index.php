@@ -21,22 +21,7 @@ if ($selectedGen !== 'all' && !array_key_exists($selectedGen, $generationFilters
     $selectedGen = 'all';
 }
 
-$filteredVersions = [];
-if ($selectedVersion !== '') {
-    $filteredVersions = [$selectedVersion];
-} elseif ($selectedGen !== 'all') {
-    $filteredVersions = array_values(array_intersect($generationFilters[$selectedGen], $availableVersions));
-}
-
-$activeVersion = $selectedVersion;
-if ($activeVersion === '' && $filteredVersions !== []) {
-    $activeVersion = $filteredVersions[0];
-}
-if ($activeVersion === '' && $availableVersions !== []) {
-    $activeVersion = $availableVersions[0];
-}
-
-$pokemon = $repository->listPokemon($search, null, $filteredVersions);
+$pokemon = $repository->listPokemon($search);
 $palette = pkdexGameVersionPalette();
 
 ?>
@@ -56,19 +41,23 @@ $palette = pkdexGameVersionPalette();
         <p class="text-slate-600 mt-2">Data is loaded from MySQL for fast responses and reduced PokeAPI traffic.</p>
     </header>
 
-    <section class="mb-4 flex flex-wrap gap-2 bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-        <?php foreach ($generationFilters as $label => $versions): ?>
-            <?php
-            $isActive = $selectedVersion === '' && $selectedGen === $label;
-            $query = ['search' => $search, 'gen' => $label];
-            ?>
-            <a href="?<?= htmlspecialchars(http_build_query($query)) ?>" class="rounded-lg px-3 py-2 text-sm font-semibold <?= $isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>"><?= htmlspecialchars($label) ?></a>
+    <section class="mb-4 flex flex-wrap gap-2 bg-white rounded-xl p-4 shadow-sm border border-slate-200" id="gen-filters">
+        <?php foreach ($generationFilters as $label => $range): ?>
+            <?php $isActive = $selectedGen === $label; ?>
+            <button
+                type="button"
+                data-gen-label="<?= htmlspecialchars($label) ?>"
+                data-min-id="<?= (int) $range['min'] ?>"
+                data-max-id="<?= (int) $range['max'] ?>"
+                class="gen-filter-btn rounded-lg px-3 py-2 text-sm font-semibold <?= $isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>"
+            >
+                <?= htmlspecialchars($label) ?>
+            </button>
         <?php endforeach; ?>
-        <a href="?<?= htmlspecialchars(http_build_query(['search' => $search, 'gen' => 'all'])) ?>" class="rounded-lg px-3 py-2 text-sm font-semibold <?= $selectedGen === 'all' && $selectedVersion === '' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>">All Gens</a>
+        <button type="button" data-gen-label="all" class="gen-filter-btn rounded-lg px-3 py-2 text-sm font-semibold <?= $selectedGen === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>">All Gens</button>
     </section>
 
     <form method="get" id="filters-form" class="mb-6 bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-        <input type="hidden" name="gen" value="<?= htmlspecialchars($selectedGen) ?>">
         <div class="grid gap-4 md:grid-cols-2">
             <div>
                 <label for="search" class="font-semibold text-sm">Search by name or number</label>
@@ -76,7 +65,7 @@ $palette = pkdexGameVersionPalette();
             </div>
             <div>
                 <label for="version" class="font-semibold text-sm">Game version</label>
-                <select id="version" name="version" onchange="this.form.submit()" class="mt-2 w-full border rounded-lg px-3 py-2 bg-white font-semibold">
+                <select id="version" name="version" class="mt-2 w-full border rounded-lg px-3 py-2 bg-white font-semibold">
                     <option value="">All game versions</option>
                     <?php foreach ($availableVersions as $version): ?>
                         <?php $color = $palette[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
@@ -87,9 +76,6 @@ $palette = pkdexGameVersionPalette();
                 </select>
             </div>
         </div>
-        <div class="mt-4">
-            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">Apply filters</button>
-        </div>
     </form>
 
     <?php if ($pokemon === []): ?>
@@ -97,9 +83,14 @@ $palette = pkdexGameVersionPalette();
             No Pokémon found in the database. Run <code>php update_database.php</code> first.
         </section>
     <?php else: ?>
-        <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <section id="pokemon-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <?php foreach ($pokemon as $entry): ?>
-                <a href="details.php?id=<?= (int) $entry['pokemon_id'] ?>&version=<?= urlencode($activeVersion) ?>" class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition">
+                <a
+                    href="details.php?id=<?= (int) $entry['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>"
+                    class="pokemon-card bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition"
+                    data-pokemon-id="<?= (int) $entry['pokemon_id'] ?>"
+                    data-name="<?= htmlspecialchars(strtolower((string) $entry['name'])) ?>"
+                >
                     <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="w-24 h-24 mx-auto" loading="lazy">
                     <p class="text-xs text-slate-500 text-center">#<?= (int) $entry['pokemon_id'] ?></p>
                     <h2 class="font-bold text-center capitalize"><?= htmlspecialchars((string) $entry['name']) ?></h2>
@@ -107,7 +98,86 @@ $palette = pkdexGameVersionPalette();
                 </a>
             <?php endforeach; ?>
         </section>
+        <p id="pokemon-empty-message" class="hidden mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No Pokémon match the current filters.</p>
     <?php endif; ?>
 </main>
+<script>
+(function () {
+    const form = document.getElementById('filters-form');
+    const searchInput = document.getElementById('search');
+    const versionSelect = document.getElementById('version');
+    const genButtons = document.querySelectorAll('.gen-filter-btn');
+    const cards = document.querySelectorAll('.pokemon-card');
+    const emptyMessage = document.getElementById('pokemon-empty-message');
+
+    let activeGen = <?= json_encode($selectedGen, JSON_THROW_ON_ERROR) ?>;
+
+    function setActiveGenButton() {
+        genButtons.forEach((button) => {
+            const label = button.dataset.genLabel;
+            const isActive = label === activeGen;
+            button.classList.toggle('bg-blue-600', isActive);
+            button.classList.toggle('text-white', isActive);
+            button.classList.toggle('bg-slate-100', !isActive);
+            button.classList.toggle('text-slate-800', !isActive);
+            button.classList.toggle('hover:bg-slate-200', !isActive);
+        });
+    }
+
+    function updateDetailsLinkVersion(card) {
+        const url = new URL(card.href, window.location.origin);
+        if (versionSelect.value) {
+            url.searchParams.set('version', versionSelect.value);
+        } else {
+            url.searchParams.delete('version');
+        }
+        card.href = url.pathname + url.search;
+    }
+
+    function applyFilters() {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        const selectedButton = Array.from(genButtons).find((button) => button.dataset.genLabel === activeGen) || null;
+        const minId = selectedButton && selectedButton.dataset.minId ? Number(selectedButton.dataset.minId) : null;
+        const maxId = selectedButton && selectedButton.dataset.maxId ? Number(selectedButton.dataset.maxId) : null;
+
+        let visibleCount = 0;
+
+        cards.forEach((card) => {
+            const pokemonId = Number(card.dataset.pokemonId);
+            const name = card.dataset.name || '';
+            const matchesSearch = searchTerm === '' || name.includes(searchTerm) || String(pokemonId) === searchTerm;
+            const matchesGen = activeGen === 'all' || (minId !== null && maxId !== null && pokemonId >= minId && pokemonId <= maxId);
+            const isVisible = matchesSearch && matchesGen;
+
+            card.classList.toggle('hidden', !isVisible);
+
+            if (isVisible) {
+                visibleCount += 1;
+            }
+
+            updateDetailsLinkVersion(card);
+        });
+
+        if (emptyMessage) {
+            emptyMessage.classList.toggle('hidden', visibleCount > 0);
+        }
+    }
+
+    genButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            activeGen = button.dataset.genLabel || 'all';
+            setActiveGenButton();
+            applyFilters();
+        });
+    });
+
+    searchInput.addEventListener('input', applyFilters);
+    versionSelect.addEventListener('change', applyFilters);
+    form.addEventListener('submit', (event) => event.preventDefault());
+
+    setActiveGenButton();
+    applyFilters();
+})();
+</script>
 </body>
 </html>

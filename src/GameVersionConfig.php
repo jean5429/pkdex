@@ -56,19 +56,19 @@ function pkdexGameVersionPalette(): array
     ];
 }
 
-/** @return array<string, array<int, string>> */
+/** @return array<string, array{min:int,max:int}> */
 function pkdexGenerationFilters(): array
 {
     return [
-        '1st Gen' => ['red-blue', 'yellow'],
-        '2nd Gen' => ['gold-silver', 'crystal'],
-        '3rd Gen' => ['ruby-sapphire', 'emerald', 'firered-leafgreen'],
-        '4th Gen' => ['diamond-pearl', 'platinum', 'heartgold-soulsilver'],
-        '5th Gen' => ['black-white', 'black-2-white-2'],
-        '6th Gen' => ['x-y', 'omega-ruby-alpha-sapphire'],
-        '7th Gen' => ['sun-moon', 'ultra-sun-ultra-moon', 'lets-go-pikachu-lets-go-eevee'],
-        '8th Gen' => ['sword-shield', 'brilliant-diamond-and-shining-pearl'],
-        '9th Gen' => ['scarlet-violet'],
+        '1st Gen' => ['min' => 1, 'max' => 151],
+        '2nd Gen' => ['min' => 152, 'max' => 251],
+        '3rd Gen' => ['min' => 252, 'max' => 386],
+        '4th Gen' => ['min' => 387, 'max' => 493],
+        '5th Gen' => ['min' => 494, 'max' => 649],
+        '6th Gen' => ['min' => 650, 'max' => 721],
+        '7th Gen' => ['min' => 722, 'max' => 809],
+        '8th Gen' => ['min' => 810, 'max' => 905],
+        '9th Gen' => ['min' => 906, 'max' => 1025],
     ];
 }
 
