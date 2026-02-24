@@ -85,7 +85,7 @@ foreach ($availableVersions as $versionKey) {
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
-<div id="page-loading-overlay" class="page-loading-overlay" aria-hidden="true">
+<div id="page-loading-overlay" class="page-loading-overlay" aria-hidden="false">
     <div class="loading-spinner" role="status" aria-label="Loading"></div>
 </div>
 <main class="mx-auto max-w-6xl p-4 sm:p-6">
@@ -413,12 +413,22 @@ foreach ($availableVersions as $versionKey) {
     }
 
 
+    function showLoadingOverlay() {
+        if (!loadingOverlay) {
+            return;
+        }
+
+        loadingOverlay.classList.remove('hidden');
+        loadingOverlay.setAttribute('aria-hidden', 'false');
+    }
+
     function hideLoadingOverlay() {
         if (!loadingOverlay) {
             return;
         }
 
         loadingOverlay.classList.add('hidden');
+        loadingOverlay.setAttribute('aria-hidden', 'true');
 
         window.setTimeout(() => {
             if (loadingOverlay && loadingOverlay.parentNode) {
@@ -463,7 +473,14 @@ foreach ($availableVersions as $versionKey) {
         setStoredValue(STORAGE_TAB_KEY, activeTab);
 
         const query = url.searchParams.toString();
-        window.location.href = query === '' ? url.pathname : (url.pathname + '?' + query);
+        const targetUrl = query === '' ? url.pathname : (url.pathname + '?' + query);
+
+        showLoadingOverlay();
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                window.location.href = targetUrl;
+            });
+        });
     }
 
     tabButtons.forEach((button) => {
@@ -520,9 +537,9 @@ foreach ($availableVersions as $versionKey) {
     applyFilters();
     appendDeferredPokemon();
 
-    window.requestAnimationFrame(() => {
+    window.addEventListener('load', () => {
         hideLoadingOverlay();
-    });
+    }, { once: true });
 })();
 </script>
 </body>
