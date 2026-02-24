@@ -38,19 +38,19 @@ $palette = pkdexGameVersionPalette();
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
-<main class="max-w-6xl mx-auto p-6">
+<main class="mx-auto max-w-6xl p-4 sm:p-6">
     <header class="mb-6">
         <p class="text-blue-600 font-bold tracking-widest text-sm uppercase">PKDex</p>
-        <h1 class="text-3xl font-black">Pokédex from local database</h1>
+        <h1 class="text-2xl font-black sm:text-3xl">Pokédex from local database</h1>
         <p class="text-slate-600 mt-2">Data is loaded from MySQL for fast responses and reduced PokeAPI traffic.</p>
     </header>
 
-    <section class="mb-4 flex gap-2 bg-white rounded-xl p-3 shadow-sm border border-slate-200" id="content-tabs">
-        <button type="button" data-tab="pokemon" class="tab-btn rounded-lg px-3 py-2 text-sm font-semibold bg-blue-600 text-white">Pokémon</button>
-        <button type="button" data-tab="tmhm" class="tab-btn rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-800 hover:bg-slate-200">TM / HM</button>
+    <section class="mb-4 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm" id="content-tabs">
+        <button type="button" data-tab="pokemon" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-blue-600 text-white sm:flex-none">Pokémon</button>
+        <button type="button" data-tab="tmhm" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-800 hover:bg-slate-200 sm:flex-none">TM / HM</button>
     </section>
 
-    <section class="mb-4 flex flex-wrap gap-2 bg-white rounded-xl p-4 shadow-sm border border-slate-200" id="gen-filters">
+    <section class="mb-4 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm" id="gen-filters">
         <?php foreach ($generationFilters as $label => $range): ?>
             <?php $isActive = $selectedGen === $label; ?>
             <button
@@ -66,15 +66,15 @@ $palette = pkdexGameVersionPalette();
         <button type="button" data-gen-label="all" class="gen-filter-btn rounded-lg px-3 py-2 text-sm font-semibold <?= $selectedGen === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>">All Gens</button>
     </section>
 
-    <form method="get" id="filters-form" class="mb-6 bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+    <form method="get" id="filters-form" class="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="grid gap-4 md:grid-cols-2">
             <div>
                 <label for="search" class="font-semibold text-sm">Search by name or number</label>
-                <input id="search" name="search" value="<?= htmlspecialchars($search) ?>" class="mt-2 w-full border rounded-lg px-3 py-2" placeholder="pikachu or 25">
+                <input id="search" name="search" value="<?= htmlspecialchars($search) ?>" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="pikachu or 25">
             </div>
             <div>
                 <label for="version" class="font-semibold text-sm">Game version</label>
-                <select id="version" name="version" class="mt-2 w-full border rounded-lg px-3 py-2 bg-white font-semibold">
+                <select id="version" name="version" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold">
                     <option value="">All game versions</option>
                     <?php foreach ($availableVersions as $version): ?>
                         <?php $color = $palette[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
@@ -93,15 +93,15 @@ $palette = pkdexGameVersionPalette();
         </section>
     <?php else: ?>
         <section id="pokemon-panel" class="tab-panel">
-            <section id="pokemon-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <section id="pokemon-grid" class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
                 <?php foreach ($initialPokemon as $entry): ?>
                     <a
                         href="details.php?id=<?= (int) $entry['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>"
-                        class="pokemon-card bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition"
+                        class="pokemon-card rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                         data-pokemon-id="<?= (int) $entry['pokemon_id'] ?>"
                         data-name="<?= htmlspecialchars(strtolower((string) $entry['name'])) ?>"
                     >
-                        <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="w-24 h-24 mx-auto" loading="lazy">
+                        <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="mx-auto h-20 w-20 sm:h-24 sm:w-24" loading="lazy">
                         <p class="text-xs text-slate-500 text-center">#<?= (int) $entry['pokemon_id'] ?></p>
                         <h2 class="font-bold text-center capitalize"><?= htmlspecialchars((string) $entry['name']) ?></h2>
                         <p class="text-xs text-center mt-1 text-slate-500"><?= htmlspecialchars(implode(', ', $entry['types'])) ?></p>
@@ -112,8 +112,8 @@ $palette = pkdexGameVersionPalette();
         </section>
 
         <section id="tmhm-panel" class="tab-panel hidden">
-            <div class="mb-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-3" id="tmhm-type-switcher">
-                <button type="button" data-tmhm-type="all" class="rounded px-3 py-1 font-semibold bg-slate-800 text-white">TM + HM</button>
+            <div class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3" id="tmhm-type-switcher">
+                <button type="button" data-tmhm-type="all" class="rounded px-3 py-1 font-semibold bg-slate-800 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">TM + HM</button>
                 <button type="button" data-tmhm-type="tm" class="rounded px-3 py-1 font-semibold text-slate-700 hover:bg-slate-200">Only TM</button>
                 <button type="button" data-tmhm-type="hm" class="rounded px-3 py-1 font-semibold text-slate-700 hover:bg-slate-200">Only HM</button>
             </div>
@@ -122,7 +122,7 @@ $palette = pkdexGameVersionPalette();
             <?php elseif ($gameTmhm === []): ?>
                 <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM data found for this game version.</p>
             <?php else: ?>
-                <section id="tmhm-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <section id="tmhm-grid" class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                     <?php foreach ($gameTmhm as $entry): ?>
                         <article class="tmhm-card bg-white rounded-xl border border-slate-200 p-3 shadow-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>">
                             <p class="text-xs font-semibold text-slate-500"><?= htmlspecialchars((string) $entry['machine']) ?> · <?= htmlspecialchars((string) $entry['type']) ?></p>
@@ -172,7 +172,7 @@ $palette = pkdexGameVersionPalette();
 
     function buildPokemonCard(entry) {
         const card = document.createElement('a');
-        card.className = 'pokemon-card bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition';
+        card.className = 'pokemon-card rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500';
         card.dataset.pokemonId = String(entry.pokemonId);
         card.dataset.name = String(entry.name).toLowerCase();
 
@@ -184,7 +184,7 @@ $palette = pkdexGameVersionPalette();
         const sprite = document.createElement('img');
         sprite.src = entry.spriteUrl;
         sprite.alt = entry.name;
-        sprite.className = 'w-24 h-24 mx-auto';
+        sprite.className = 'mx-auto h-20 w-20 sm:h-24 sm:w-24';
         sprite.loading = 'lazy';
 
         const number = document.createElement('p');
