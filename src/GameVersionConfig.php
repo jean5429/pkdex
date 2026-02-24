@@ -29,30 +29,30 @@ function pkdexGameVersions(): array
     ];
 }
 
-/** @return array<string, array{bg:string,text:string}> */
+/** @return array<string, array{bg:string,text:string,bg_secondary?:string}> */
 function pkdexGameVersionPalette(): array
 {
     return [
-        'red-blue' => ['bg' => '#4f46e5', 'text' => '#ffffff'],
+        'red-blue' => ['bg' => '#dc2626', 'bg_secondary' => '#2563eb', 'text' => '#ffffff'],
         'yellow' => ['bg' => '#facc15', 'text' => '#1f2937'],
-        'gold-silver' => ['bg' => '#94a3b8', 'text' => '#0f172a'],
+        'gold-silver' => ['bg' => '#ca8a04', 'bg_secondary' => '#94a3b8', 'text' => '#0f172a'],
         'crystal' => ['bg' => '#06b6d4', 'text' => '#082f49'],
-        'ruby-sapphire' => ['bg' => '#7c3aed', 'text' => '#ffffff'],
+        'ruby-sapphire' => ['bg' => '#be123c', 'bg_secondary' => '#1d4ed8', 'text' => '#ffffff'],
         'emerald' => ['bg' => '#059669', 'text' => '#ffffff'],
-        'firered-leafgreen' => ['bg' => '#16a34a', 'text' => '#ffffff'],
-        'diamond-pearl' => ['bg' => '#f472b6', 'text' => '#1f2937'],
+        'firered-leafgreen' => ['bg' => '#dc2626', 'bg_secondary' => '#16a34a', 'text' => '#ffffff'],
+        'diamond-pearl' => ['bg' => '#60a5fa', 'bg_secondary' => '#f9a8d4', 'text' => '#1f2937'],
         'platinum' => ['bg' => '#64748b', 'text' => '#ffffff'],
-        'heartgold-soulsilver' => ['bg' => '#a16207', 'text' => '#ffffff'],
-        'black-white' => ['bg' => '#111827', 'text' => '#ffffff'],
-        'black-2-white-2' => ['bg' => '#374151', 'text' => '#ffffff'],
-        'x-y' => ['bg' => '#1d4ed8', 'text' => '#ffffff'],
-        'omega-ruby-alpha-sapphire' => ['bg' => '#c2410c', 'text' => '#ffffff'],
-        'sun-moon' => ['bg' => '#ea580c', 'text' => '#ffffff'],
-        'ultra-sun-ultra-moon' => ['bg' => '#be185d', 'text' => '#ffffff'],
-        'lets-go-pikachu-lets-go-eevee' => ['bg' => '#65a30d', 'text' => '#ffffff'],
-        'sword-shield' => ['bg' => '#2563eb', 'text' => '#ffffff'],
-        'brilliant-diamond-and-shining-pearl' => ['bg' => '#db2777', 'text' => '#ffffff'],
-        'scarlet-violet' => ['bg' => '#9333ea', 'text' => '#ffffff'],
+        'heartgold-soulsilver' => ['bg' => '#ca8a04', 'bg_secondary' => '#94a3b8', 'text' => '#ffffff'],
+        'black-white' => ['bg' => '#111827', 'bg_secondary' => '#e5e7eb', 'text' => '#ffffff'],
+        'black-2-white-2' => ['bg' => '#1f2937', 'bg_secondary' => '#9ca3af', 'text' => '#ffffff'],
+        'x-y' => ['bg' => '#2563eb', 'bg_secondary' => '#b91c1c', 'text' => '#ffffff'],
+        'omega-ruby-alpha-sapphire' => ['bg' => '#c2410c', 'bg_secondary' => '#0ea5e9', 'text' => '#ffffff'],
+        'sun-moon' => ['bg' => '#f97316', 'bg_secondary' => '#334155', 'text' => '#ffffff'],
+        'ultra-sun-ultra-moon' => ['bg' => '#f97316', 'bg_secondary' => '#8b5cf6', 'text' => '#ffffff'],
+        'lets-go-pikachu-lets-go-eevee' => ['bg' => '#eab308', 'bg_secondary' => '#a16207', 'text' => '#1f2937'],
+        'sword-shield' => ['bg' => '#2563eb', 'bg_secondary' => '#dc2626', 'text' => '#ffffff'],
+        'brilliant-diamond-and-shining-pearl' => ['bg' => '#60a5fa', 'bg_secondary' => '#f9a8d4', 'text' => '#1f2937'],
+        'scarlet-violet' => ['bg' => '#dc2626', 'bg_secondary' => '#7c3aed', 'text' => '#ffffff'],
     ];
 }
 
