@@ -16,7 +16,9 @@ if ($availableVersions === []) {
 }
 
 $generationFilters = pkdexGenerationFilters();
-$selectedVersion = in_array($requestedVersion, $availableVersions, true) ? $requestedVersion : '';
+$selectedVersion = in_array($requestedVersion, $availableVersions, true)
+    ? $requestedVersion
+    : ($availableVersions[0] ?? '');
 if ($selectedGen !== 'all' && !array_key_exists($selectedGen, $generationFilters)) {
     $selectedGen = 'all';
 }
@@ -48,8 +50,44 @@ foreach ($availableVersions as $versionKey) {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <title>PKDex Database Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .page-loading-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(59, 130, 246, 0.16);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 50;
+            transition: opacity 180ms ease;
+        }
+
+        .page-loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 9999px;
+            border: 4px solid rgba(255, 255, 255, 0.45);
+            border-top-color: rgba(37, 99, 235, 1);
+            animation: spin 0.8s linear infinite;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
+<div id="page-loading-overlay" class="page-loading-overlay" aria-hidden="true">
+    <div class="loading-spinner" role="status" aria-label="Loading"></div>
+</div>
 <main class="mx-auto max-w-6xl p-4 sm:p-6">
     <header class="mb-6">
         <p class="text-blue-600 font-bold tracking-widest text-sm uppercase">📘 PKDex</p>
@@ -89,7 +127,6 @@ foreach ($availableVersions as $versionKey) {
                 <label class="font-semibold text-sm">🎮 Game version</label>
                 <input type="hidden" id="version" name="version" value="<?= htmlspecialchars($selectedVersion) ?>">
                 <div id="version-selector" class="mt-2 flex flex-wrap gap-2 rounded-lg border border-slate-300 bg-slate-50 p-2">
-                    <button type="button" data-version-option="" class="version-option rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold <?= $selectedVersion === '' ? 'ring-2 ring-blue-500' : '' ?>">All versions</button>
                     <?php foreach ($availableVersions as $version): ?>
                         <?php $style = $versionStyleMap[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
                         <button
@@ -136,9 +173,7 @@ foreach ($availableVersions as $versionKey) {
                 <button type="button" data-tmhm-type="tm" class="rounded px-3 py-1 font-semibold text-slate-700 hover:bg-slate-200">Only TM</button>
                 <button type="button" data-tmhm-type="hm" class="rounded px-3 py-1 font-semibold text-slate-700 hover:bg-slate-200">Only HM</button>
             </div>
-            <?php if ($selectedVersion === ''): ?>
-                <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">Select a game version to view TM/HM data.</p>
-            <?php elseif ($gameTmhm === []): ?>
+            <?php if ($gameTmhm === []): ?>
                 <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM data found for this game version.</p>
             <?php else: ?>
                 <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -178,6 +213,7 @@ foreach ($availableVersions as $versionKey) {
     const tmhmTypeSwitcher = document.getElementById('tmhm-type-switcher');
     const emptyMessage = document.getElementById('pokemon-empty-message');
     const tmhmFilterEmptyMessage = document.getElementById('tmhm-filter-empty-message');
+    const loadingOverlay = document.getElementById('page-loading-overlay');
     const deferredPokemon = <?= json_encode(array_map(static function (array $entry): array {
         return [
             'pokemonId' => (int) $entry['pokemon_id'],
@@ -352,32 +388,20 @@ foreach ($availableVersions as $versionKey) {
     }
 
 
-    function initializeSavedVersion() {
-        const savedVersion = window.localStorage.getItem(STORAGE_VERSION_KEY);
-        const hasSelectedVersion = versionInput.value !== '';
-
-        if (hasSelectedVersion) {
+    function hideLoadingOverlay() {
+        if (!loadingOverlay) {
             return;
         }
 
-        if (!savedVersion) {
-            return;
-        }
+        loadingOverlay.classList.add('hidden');
 
-        const hasOption = Array.from(versionButtons).some((button) => (button.dataset.versionOption || '') === savedVersion);
-        if (!hasOption) {
-            return;
-        }
-
-        const url = new URL(window.location.href);
-        url.searchParams.set('version', savedVersion);
-        if (activeTab !== 'pokemon') {
-            url.searchParams.set('tab', activeTab);
-        }
-
-        const query = url.searchParams.toString();
-        window.location.replace(query === '' ? url.pathname : (url.pathname + '?' + query));
+        window.setTimeout(() => {
+            if (loadingOverlay && loadingOverlay.parentNode) {
+                loadingOverlay.parentNode.removeChild(loadingOverlay);
+            }
+        }, 220);
     }
+
     function syncUrlWithFilters() {
         const url = new URL(window.location.href);
 
@@ -465,12 +489,15 @@ foreach ($availableVersions as $versionKey) {
     });
     form.addEventListener('submit', (event) => event.preventDefault());
 
-    initializeSavedVersion();
     window.localStorage.setItem(STORAGE_TAB_KEY, activeTab);
     setActiveTab();
     setActiveGenButton();
     applyFilters();
     appendDeferredPokemon();
+
+    window.requestAnimationFrame(() => {
+        hideLoadingOverlay();
+    });
 })();
 </script>
 </body>
