@@ -9,6 +9,23 @@ $repository = new PokemonRepository((new Database($config['db']))->pdo());
 $pokemon = $id > 0 ? $repository->getPokemonDetails($id) : null;
 
 $formatLabel = static fn (string $value): string => pkdexFormatGameVersionLabel($value);
+$formatMachineType = static function (string $moveName): string {
+    $hiddenMachineMoves = [
+        'cut',
+        'fly',
+        'surf',
+        'strength',
+        'flash',
+        'whirlpool',
+        'waterfall',
+        'rock-smash',
+        'dive',
+        'defog',
+        'rock-climb',
+    ];
+
+    return in_array(strtolower($moveName), $hiddenMachineMoves, true) ? 'HM' : 'TM';
+};
 $selectedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
 $selectedMethod = isset($_GET['method']) ? trim((string) $_GET['method']) : 'level-up';
 $availableMethods = ['level-up', 'machine'];
@@ -298,7 +315,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                             <?php foreach ($currentMoves as $move): ?>
                                 <tr class="border-t border-slate-200">
                                     <td class="px-4 py-3 font-medium capitalize"><?= htmlspecialchars(str_replace('-', ' ', (string) $move['name'])) ?></td>
-                                    <td class="px-4 py-3"><?= $selectedMethod === 'level-up' ? (int) $move['level'] : htmlspecialchars($formatLabel((string) $move['method'])) ?></td>
+                                    <td class="px-4 py-3"><?= $selectedMethod === 'level-up' ? (int) $move['level'] : htmlspecialchars($formatMachineType((string) $move['name'])) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -333,6 +350,19 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
     <script>
         (() => {
             const moveDataByMethod = <?= json_encode($movesByMethod, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+            const hiddenMachineMoves = new Set([
+                'cut',
+                'fly',
+                'surf',
+                'strength',
+                'flash',
+                'whirlpool',
+                'waterfall',
+                'rock-smash',
+                'dive',
+                'defog',
+                'rock-climb',
+            ]);
             const moveTableBody = document.getElementById('moves-table-body');
             const secondaryHeader = document.getElementById('moves-secondary-header');
             const methodSwitcher = document.getElementById('move-method-switcher');
@@ -370,7 +400,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                     detailCell.className = 'px-4 py-3';
                     detailCell.textContent = method === 'level-up'
                         ? String(Number(move.level ?? 0))
-                        : String(move.method ?? '').replaceAll('-', ' ');
+                        : (hiddenMachineMoves.has(String(move.name ?? '').toLowerCase()) ? 'HM' : 'TM');
 
                     row.appendChild(moveCell);
                     row.appendChild(detailCell);
