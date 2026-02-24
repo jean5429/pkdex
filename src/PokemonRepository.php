@@ -105,26 +105,31 @@ final class PokemonRepository
         );
     }
 
-    /** @return array<int, array{name:string,method:string,level:int}> */
+    /** @return array<string, array<int, array{name:string,method:string,level:int}>> */
     private function movesByPokemonId(int $pokemonId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT move_name, learn_method, level_learned_at
+            'SELECT move_name, learn_method, level_learned_at, game_version
              FROM pokemon_moves
              WHERE pokemon_id = :pokemonId
-             ORDER BY level_learned_at ASC, move_name ASC
-             LIMIT 120'
+             ORDER BY game_version ASC, level_learned_at ASC, move_name ASC'
         );
         $stmt->bindValue(':pokemonId', $pokemonId, PDO::PARAM_INT);
         $stmt->execute();
 
-        return array_map(
-            static fn (array $row): array => [
+        $rows = $stmt->fetchAll() ?: [];
+        $movesByVersion = [];
+
+        foreach ($rows as $row) {
+            $version = (string) $row['game_version'];
+            $movesByVersion[$version] ??= [];
+            $movesByVersion[$version][] = [
                 'name' => (string) $row['move_name'],
                 'method' => (string) $row['learn_method'],
                 'level' => (int) $row['level_learned_at'],
-            ],
-            $stmt->fetchAll() ?: []
-        );
+            ];
+        }
+
+        return $movesByVersion;
     }
 }
