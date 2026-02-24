@@ -8,10 +8,12 @@ $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $repository = new PokemonRepository((new Database($config['db']))->pdo());
 $pokemon = $id > 0 ? $repository->getPokemonDetails($id) : null;
 
-$formatLabel = static fn (string $value): string => ucwords(str_replace(['-', '_'], ' ', $value));
+$formatLabel = static fn (string $value): string => pkdexFormatGameVersionLabel($value);
 $selectedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
 $selectedMethod = isset($_GET['method']) ? trim((string) $_GET['method']) : 'level-up';
 $availableMethods = ['level-up', 'machine'];
+$palette = pkdexGameVersionPalette();
+$allowedVersions = pkdexGameVersions();
 
 if (!in_array($selectedMethod, $availableMethods, true)) {
     $selectedMethod = 'level-up';
@@ -19,7 +21,7 @@ if (!in_array($selectedMethod, $availableMethods, true)) {
 
 $versionGroups = [];
 if ($pokemon !== null) {
-    $versionGroups = array_keys($pokemon['moves']);
+    $versionGroups = array_values(array_intersect($allowedVersions, array_keys($pokemon['moves'])));
 
     if ($selectedVersion === '' || !in_array($selectedVersion, $versionGroups, true)) {
         $selectedVersion = $versionGroups[0] ?? '';
@@ -235,9 +237,10 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 <div class="flex flex-col gap-3 md:flex-row md:items-end">
                     <div class="w-full md:max-w-sm">
                         <label for="version" class="text-sm font-semibold text-slate-700">Select Version:</label>
-                        <select id="version" name="version" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                        <select id="version" name="version" onchange="this.form.submit()" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold">
                             <?php foreach ($versionGroups as $version): ?>
-                                <option value="<?= htmlspecialchars($version) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
+                                <?php $color = $palette[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
+                                <option value="<?= htmlspecialchars($version) ?>" style="background-color: <?= htmlspecialchars($color['bg']) ?>; color: <?= htmlspecialchars($color['text']) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($formatLabel((string) $version)) ?>
                                 </option>
                             <?php endforeach; ?>

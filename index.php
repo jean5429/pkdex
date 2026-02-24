@@ -6,13 +6,38 @@ require_once __DIR__ . '/src/bootstrap.php';
 
 $repository = new PokemonRepository((new Database($config['db']))->pdo());
 $search = isset($_GET['search']) ? (string) $_GET['search'] : '';
-$selectedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
-$allVersions = $repository->listGameVersions();
-if ($selectedVersion === '' && $allVersions !== []) {
-    $selectedVersion = $allVersions[0];
+$requestedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
+$selectedGen = isset($_GET['gen']) ? trim((string) $_GET['gen']) : 'all';
+
+$allowedVersions = pkdexGameVersions();
+$availableVersions = array_values(array_intersect($allowedVersions, $repository->listGameVersions()));
+if ($availableVersions === []) {
+    $availableVersions = $allowedVersions;
 }
-$pokemon = $repository->listPokemon($search, 120);
-$formatLabel = static fn (string $value): string => ucwords(str_replace(['-', '_'], ' ', $value));
+
+$generationFilters = pkdexGenerationFilters();
+$selectedVersion = in_array($requestedVersion, $availableVersions, true) ? $requestedVersion : '';
+if ($selectedGen !== 'all' && !array_key_exists($selectedGen, $generationFilters)) {
+    $selectedGen = 'all';
+}
+
+$filteredVersions = [];
+if ($selectedVersion !== '') {
+    $filteredVersions = [$selectedVersion];
+} elseif ($selectedGen !== 'all') {
+    $filteredVersions = array_values(array_intersect($generationFilters[$selectedGen], $availableVersions));
+}
+
+$activeVersion = $selectedVersion;
+if ($activeVersion === '' && $filteredVersions !== []) {
+    $activeVersion = $filteredVersions[0];
+}
+if ($activeVersion === '' && $availableVersions !== []) {
+    $activeVersion = $availableVersions[0];
+}
+
+$pokemon = $repository->listPokemon($search, null, $filteredVersions);
+$palette = pkdexGameVersionPalette();
 
 ?>
 <!DOCTYPE html>
@@ -31,7 +56,19 @@ $formatLabel = static fn (string $value): string => ucwords(str_replace(['-', '_
         <p class="text-slate-600 mt-2">Data is loaded from MySQL for fast responses and reduced PokeAPI traffic.</p>
     </header>
 
-    <form method="get" class="mb-6 bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+    <section class="mb-4 flex flex-wrap gap-2 bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+        <?php foreach ($generationFilters as $label => $versions): ?>
+            <?php
+            $isActive = $selectedVersion === '' && $selectedGen === $label;
+            $query = ['search' => $search, 'gen' => $label];
+            ?>
+            <a href="?<?= htmlspecialchars(http_build_query($query)) ?>" class="rounded-lg px-3 py-2 text-sm font-semibold <?= $isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>"><?= htmlspecialchars($label) ?></a>
+        <?php endforeach; ?>
+        <a href="?<?= htmlspecialchars(http_build_query(['search' => $search, 'gen' => 'all'])) ?>" class="rounded-lg px-3 py-2 text-sm font-semibold <?= $selectedGen === 'all' && $selectedVersion === '' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>">All Gens</a>
+    </section>
+
+    <form method="get" id="filters-form" class="mb-6 bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+        <input type="hidden" name="gen" value="<?= htmlspecialchars($selectedGen) ?>">
         <div class="grid gap-4 md:grid-cols-2">
             <div>
                 <label for="search" class="font-semibold text-sm">Search by name or number</label>
@@ -39,10 +76,12 @@ $formatLabel = static fn (string $value): string => ucwords(str_replace(['-', '_
             </div>
             <div>
                 <label for="version" class="font-semibold text-sm">Game version</label>
-                <select id="version" name="version" class="mt-2 w-full border rounded-lg px-3 py-2 bg-white">
-                    <?php foreach ($allVersions as $version): ?>
-                        <option value="<?= htmlspecialchars($version) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($formatLabel($version)) ?>
+                <select id="version" name="version" onchange="this.form.submit()" class="mt-2 w-full border rounded-lg px-3 py-2 bg-white font-semibold">
+                    <option value="">All game versions</option>
+                    <?php foreach ($availableVersions as $version): ?>
+                        <?php $color = $palette[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
+                        <option value="<?= htmlspecialchars($version) ?>" style="background-color: <?= htmlspecialchars($color['bg']) ?>; color: <?= htmlspecialchars($color['text']) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
+                            <?= htmlspecialchars(pkdexFormatGameVersionLabel($version)) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -60,7 +99,7 @@ $formatLabel = static fn (string $value): string => ucwords(str_replace(['-', '_
     <?php else: ?>
         <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <?php foreach ($pokemon as $entry): ?>
-                <a href="details.php?id=<?= (int) $entry['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition">
+                <a href="details.php?id=<?= (int) $entry['pokemon_id'] ?>&version=<?= urlencode($activeVersion) ?>" class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition">
                     <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="w-24 h-24 mx-auto" loading="lazy">
                     <p class="text-xs text-slate-500 text-center">#<?= (int) $entry['pokemon_id'] ?></p>
                     <h2 class="font-bold text-center capitalize"><?= htmlspecialchars((string) $entry['name']) ?></h2>
