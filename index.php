@@ -27,6 +27,17 @@ $initialPokemonCount = 24;
 $initialPokemon = array_slice($pokemon, 0, $initialPokemonCount);
 $deferredPokemon = array_slice($pokemon, $initialPokemonCount);
 $palette = pkdexGameVersionPalette();
+$versionStyleMap = [];
+foreach ($availableVersions as $versionKey) {
+    $color = $palette[$versionKey] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a'];
+    $bg = isset($color['bg_secondary'])
+        ? 'linear-gradient(90deg, ' . $color['bg'] . ' 0%, ' . $color['bg_secondary'] . ' 100%)'
+        : $color['bg'];
+    $versionStyleMap[$versionKey] = [
+        'bg' => $bg,
+        'text' => $color['text'],
+    ];
+}
 
 ?>
 <!DOCTYPE html>
@@ -40,14 +51,14 @@ $palette = pkdexGameVersionPalette();
 <body class="bg-slate-100 min-h-screen text-slate-800">
 <main class="mx-auto max-w-6xl p-4 sm:p-6">
     <header class="mb-6">
-        <p class="text-blue-600 font-bold tracking-widest text-sm uppercase">PKDex</p>
-        <h1 class="text-2xl font-black sm:text-3xl">Pokédex from local database</h1>
+        <p class="text-blue-600 font-bold tracking-widest text-sm uppercase">📘 PKDex</p>
+        <h1 class="text-2xl font-black sm:text-3xl">🔎 Pokédex from local database</h1>
         <p class="text-slate-600 mt-2">Data is loaded from MySQL for fast responses and reduced PokeAPI traffic.</p>
     </header>
 
     <section class="mb-4 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm" id="content-tabs">
-        <button type="button" data-tab="pokemon" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-blue-600 text-white sm:flex-none">Pokémon</button>
-        <button type="button" data-tab="tmhm" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-800 hover:bg-slate-200 sm:flex-none">TM / HM</button>
+        <button type="button" data-tab="pokemon" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-blue-600 text-white sm:flex-none">🧬 Pokémon</button>
+        <button type="button" data-tab="tmhm" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-800 hover:bg-slate-200 sm:flex-none">💿 TM / HM</button>
     </section>
 
     <section class="mb-4 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm" id="gen-filters">
@@ -63,7 +74,7 @@ $palette = pkdexGameVersionPalette();
                 <?= htmlspecialchars($label) ?>
             </button>
         <?php endforeach; ?>
-        <button type="button" data-gen-label="all" class="gen-filter-btn rounded-lg px-3 py-2 text-sm font-semibold <?= $selectedGen === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>">All Gens</button>
+        <button type="button" data-gen-label="all" class="gen-filter-btn rounded-lg px-3 py-2 text-sm font-semibold <?= $selectedGen === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>">🌐 All Gens</button>
     </section>
 
     <form method="get" id="filters-form" class="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -74,16 +85,22 @@ $palette = pkdexGameVersionPalette();
                 <input id="search" name="search" value="<?= htmlspecialchars($search) ?>" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="pikachu or 25">
             </div>
             <div>
-                <label for="version" class="font-semibold text-sm">Game version</label>
-                <select id="version" name="version" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold">
-                    <option value="">All game versions</option>
+                <label class="font-semibold text-sm">🎮 Game version</label>
+                <input type="hidden" id="version" name="version" value="<?= htmlspecialchars($selectedVersion) ?>">
+                <div id="version-selector" class="mt-2 flex flex-wrap gap-2 rounded-lg border border-slate-300 bg-slate-50 p-2">
+                    <button type="button" data-version-option="" class="version-option rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold <?= $selectedVersion === '' ? 'ring-2 ring-blue-500' : '' ?>">All versions</button>
                     <?php foreach ($availableVersions as $version): ?>
-                        <?php $color = $palette[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
-                        <option value="<?= htmlspecialchars($version) ?>" style="background-color: <?= htmlspecialchars($color['bg']) ?>; color: <?= htmlspecialchars($color['text']) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
+                        <?php $style = $versionStyleMap[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
+                        <button
+                            type="button"
+                            data-version-option="<?= htmlspecialchars($version) ?>"
+                            class="version-option rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold <?= $version === $selectedVersion ? 'ring-2 ring-blue-500' : '' ?>"
+                            style="background: <?= htmlspecialchars($style['bg']) ?>; color: <?= htmlspecialchars($style['text']) ?>"
+                        >
                             <?= htmlspecialchars(pkdexFormatGameVersionLabel($version)) ?>
-                        </option>
+                        </button>
                     <?php endforeach; ?>
-                </select>
+                </div>
             </div>
         </div>
     </form>
@@ -148,7 +165,8 @@ $palette = pkdexGameVersionPalette();
 (function () {
     const form = document.getElementById('filters-form');
     const searchInput = document.getElementById('search');
-    const versionSelect = document.getElementById('version');
+    const versionInput = document.getElementById('version');
+    const versionButtons = document.querySelectorAll('.version-option');
     const activeTabInput = document.getElementById('active-tab-input');
     const genButtons = document.querySelectorAll('.gen-filter-btn');
     const tabButtons = document.querySelectorAll('.tab-btn');
@@ -194,8 +212,8 @@ $palette = pkdexGameVersionPalette();
         card.dataset.pokemonId = String(entry.pokemonId);
         card.dataset.name = String(entry.name).toLowerCase();
 
-        const versionParam = versionSelect.value
-            ? '&version=' + encodeURIComponent(versionSelect.value)
+        const versionParam = versionInput.value
+            ? '&version=' + encodeURIComponent(versionInput.value)
             : '';
         card.href = 'details.php?id=' + encodeURIComponent(String(entry.pokemonId)) + versionParam;
 
@@ -285,8 +303,8 @@ $palette = pkdexGameVersionPalette();
 
     function updateDetailsLinkVersion(card) {
         const url = new URL(card.href, window.location.origin);
-        if (versionSelect.value) {
-            url.searchParams.set('version', versionSelect.value);
+        if (versionInput.value) {
+            url.searchParams.set('version', versionInput.value);
         } else {
             url.searchParams.delete('version');
         }
@@ -335,7 +353,7 @@ $palette = pkdexGameVersionPalette();
 
     function initializeSavedVersion() {
         const savedVersion = window.localStorage.getItem(STORAGE_VERSION_KEY);
-        const hasSelectedVersion = versionSelect.value !== '';
+        const hasSelectedVersion = versionInput.value !== '';
 
         if (hasSelectedVersion) {
             return;
@@ -345,7 +363,7 @@ $palette = pkdexGameVersionPalette();
             return;
         }
 
-        const hasOption = Array.from(versionSelect.options).some((option) => option.value === savedVersion);
+        const hasOption = Array.from(versionButtons).some((button) => (button.dataset.versionOption || '') === savedVersion);
         if (!hasOption) {
             return;
         }
@@ -368,8 +386,8 @@ $palette = pkdexGameVersionPalette();
             url.searchParams.delete('search');
         }
 
-        if (versionSelect.value !== '') {
-            url.searchParams.set('version', versionSelect.value);
+        if (versionInput.value !== '') {
+            url.searchParams.set('version', versionInput.value);
         } else {
             url.searchParams.delete('version');
         }
@@ -386,8 +404,8 @@ $palette = pkdexGameVersionPalette();
             url.searchParams.delete('tab');
         }
 
-        if (versionSelect.value !== '') {
-            window.localStorage.setItem(STORAGE_VERSION_KEY, versionSelect.value);
+        if (versionInput.value !== '') {
+            window.localStorage.setItem(STORAGE_VERSION_KEY, versionInput.value);
         } else {
             window.localStorage.removeItem(STORAGE_VERSION_KEY);
         }
@@ -432,7 +450,18 @@ $palette = pkdexGameVersionPalette();
     }
 
     searchInput.addEventListener('input', applyFilters);
-    versionSelect.addEventListener('change', syncUrlWithFilters);
+    versionButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const selectedValue = button.dataset.versionOption || '';
+            versionInput.value = selectedValue;
+            versionButtons.forEach((item) => {
+                const active = (item.dataset.versionOption || '') === selectedValue;
+                item.classList.toggle('ring-2', active);
+                item.classList.toggle('ring-blue-500', active);
+            });
+            syncUrlWithFilters();
+        });
+    });
     form.addEventListener('submit', (event) => event.preventDefault());
 
     initializeSavedVersion();

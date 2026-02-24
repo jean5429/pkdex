@@ -31,6 +31,7 @@ $selectedMethod = isset($_GET['method']) ? trim((string) $_GET['method']) : 'lev
 $availableMethods = ['level-up', 'machine'];
 $palette = pkdexGameVersionPalette();
 $allowedVersions = pkdexGameVersions();
+$versionStyleMap = [];
 
 if (!in_array($selectedMethod, $availableMethods, true)) {
     $selectedMethod = 'level-up';
@@ -45,6 +46,17 @@ if ($pokemon !== null) {
 
     if ($selectedVersion === '' || !in_array($selectedVersion, $versionGroups, true)) {
         $selectedVersion = $versionGroups[0] ?? '';
+    }
+
+    foreach ($versionGroups as $versionKey) {
+        $color = $palette[$versionKey] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a'];
+        $bg = isset($color['bg_secondary'])
+            ? 'linear-gradient(90deg, ' . $color['bg'] . ' 0%, ' . $color['bg_secondary'] . ' 100%)'
+            : $color['bg'];
+        $versionStyleMap[$versionKey] = [
+            'bg' => $bg,
+            'text' => $color['text'],
+        ];
     }
 }
 
@@ -190,7 +202,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
 
         <section class="mt-8 grid gap-4 sm:gap-6 xl:grid-cols-3">
             <article class="rounded-3xl bg-zinc-100 p-5 sm:p-8">
-                <h2 class="text-center text-2xl font-bold">Basic Info</h2>
+                <h2 class="text-center text-2xl font-bold">📋 Basic Info</h2>
                 <div class="mt-6 grid grid-cols-2 text-center">
                     <p class="text-xl font-semibold">Normal</p>
                     <p class="text-xl font-semibold">Shiny</p>
@@ -210,7 +222,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
             </article>
 
             <article class="rounded-3xl bg-zinc-100 p-5 sm:p-8">
-                <h2 class="text-center text-2xl font-bold">Stats</h2>
+                <h2 class="text-center text-2xl font-bold">📊 Stats</h2>
                 <ul class="mt-6 space-y-3">
                     <?php foreach ($pokemon['stats'] as $stat): ?>
                         <?php
@@ -250,7 +262,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
             </article>
 
             <article class="rounded-3xl bg-zinc-100 p-5 sm:p-8">
-                <h2 class="text-center text-2xl font-bold">Evolution Tree</h2>
+                <h2 class="text-center text-2xl font-bold">🌱 Evolution Tree</h2>
                 <?php if ($pokemon['evolution_chain'] === []): ?>
                     <p class="mt-6 text-center text-xl text-slate-600">No evolution chain in database yet. Run <code>php update_database.php</code> to sync species and evolution data.</p>
                 <?php else: ?>
@@ -275,21 +287,27 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
         </section>
         <section class="mt-6 grid gap-4 sm:gap-6 lg:grid-cols-3 lg:items-start">
             <article class="rounded-3xl bg-zinc-100 p-6 lg:col-span-2">
-                <h2 class="mb-2 text-3xl font-extrabold">Moves</h2>
+                <h2 class="mb-2 text-3xl font-extrabold">⚔️ Moves</h2>
                 <form method="get" class="mt-3">
                     <input type="hidden" name="id" value="<?= (int) $pokemon['pokemon_id'] ?>">
                     <input type="hidden" name="method" value="<?= htmlspecialchars($selectedMethod) ?>">
                     <div class="flex flex-col gap-3 md:flex-row md:items-end">
                         <div class="w-full md:max-w-sm">
-                            <label for="version" class="text-sm font-semibold text-slate-700">Select Version:</label>
-                            <select id="version" name="version" onchange="this.form.submit()" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold">
+                            <label class="text-sm font-semibold text-slate-700">🎮 Select Version:</label>
+                            <input type="hidden" id="version" name="version" value="<?= htmlspecialchars($selectedVersion) ?>">
+                            <div id="version-selector" class="mt-1 flex flex-wrap gap-2 rounded-lg border border-slate-300 bg-white p-2">
                                 <?php foreach ($versionGroups as $version): ?>
-                                    <?php $color = $palette[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
-                                    <option value="<?= htmlspecialchars($version) ?>" style="background-color: <?= htmlspecialchars($color['bg']) ?>; color: <?= htmlspecialchars($color['text']) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
+                                    <?php $style = $versionStyleMap[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
+                                    <button
+                                        type="button"
+                                        data-version-option="<?= htmlspecialchars($version) ?>"
+                                        class="version-option rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold <?= $version === $selectedVersion ? 'ring-2 ring-blue-500' : '' ?>"
+                                        style="background: <?= htmlspecialchars($style['bg']) ?>; color: <?= htmlspecialchars($style['text']) ?>"
+                                    >
                                         <?= htmlspecialchars($formatLabel((string) $version)) ?>
-                                    </option>
+                                    </button>
                                 <?php endforeach; ?>
-                            </select>
+                            </div>
                         </div>
                         <div class="flex flex-wrap items-center justify-center gap-2 md:ml-auto" id="move-method-switcher">
                             <button type="button" data-method="level-up" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">Level Up</button>
@@ -325,7 +343,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
             </article>
 
             <article class="rounded-3xl bg-zinc-100 p-6">
-                <h2 class="mb-4 text-center text-3xl font-extrabold">Locations</h2>
+                <h2 class="mb-4 text-center text-3xl font-extrabold">🗺️ Locations</h2>
                 <div class="space-y-2">
                     <?php if ($selectedVersion === ''): ?>
                         <span class="block text-sm text-slate-500">No game version selected.</span>
@@ -367,6 +385,8 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
             const secondaryHeader = document.getElementById('moves-secondary-header');
             const methodSwitcher = document.getElementById('move-method-switcher');
             const methodInput = document.querySelector('input[name="method"]');
+            const versionInput = document.getElementById('version');
+            const versionButtons = document.querySelectorAll('.version-option');
 
             if (!moveTableBody || !secondaryHeader || !methodSwitcher || !methodInput) {
                 return;
@@ -425,6 +445,16 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
             methodSwitcher.querySelectorAll('button[data-method]').forEach((button) => {
                 button.addEventListener('click', () => {
                     setActiveMethod(button.dataset.method || 'level-up');
+                });
+            });
+
+            versionButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    if (!versionInput) {
+                        return;
+                    }
+                    versionInput.value = button.dataset.versionOption || '';
+                    button.closest('form')?.submit();
                 });
             });
 
