@@ -237,72 +237,76 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 <?php endif; ?>
             </article>
         </section>
-        <section class="mt-6 rounded-3xl bg-zinc-100 p-6">
-            <h2 class="mb-2 text-4xl font-extrabold">Moves</h2>
-            <form method="get" class="mt-3">
-                <input type="hidden" name="id" value="<?= (int) $pokemon['pokemon_id'] ?>">
-                <div class="flex flex-col gap-3 md:flex-row md:items-end">
-                    <div class="w-full md:max-w-sm">
-                        <label for="version" class="text-sm font-semibold text-slate-700">Select Version:</label>
-                        <select id="version" name="version" onchange="this.form.submit()" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold">
-                            <?php foreach ($versionGroups as $version): ?>
-                                <?php $color = $palette[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
-                                <option value="<?= htmlspecialchars($version) ?>" style="background-color: <?= htmlspecialchars($color['bg']) ?>; color: <?= htmlspecialchars($color['text']) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($formatLabel((string) $version)) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="flex flex-col gap-2 md:ml-auto md:min-w-0">
-                        <div class="flex items-center gap-2">
-                            <button name="method" value="level-up" class="rounded px-3 py-1 font-semibold <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600' ?>">Level Up</button>
-                            <button name="method" value="machine" class="rounded px-3 py-1 font-semibold <?= $selectedMethod === 'machine' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600' ?>">TM/HM</button>
-                        </div>
-                        <div class="flex min-w-0 flex-wrap items-center gap-2 md:justify-end">
-                            <span class="text-sm font-semibold text-slate-700">Locations:</span>
-                            <?php if ($selectedVersion === ''): ?>
-                                <span class="text-sm text-slate-500">No game version selected.</span>
-                            <?php elseif ($currentLocations === []): ?>
-                                <span class="text-sm text-slate-500">No known encounter locations.</span>
-                            <?php else: ?>
-                                <?php foreach ($currentLocations as $location): ?>
-                                    <span class="inline-flex items-center gap-2 rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-800">
-                                        <?= htmlspecialchars($formatLabel((string) str_replace('-area', '', (string) $location['name']))) ?>
-                                        <?php if ($location['max_chance'] !== null): ?>
-                                            <span class="rounded-full bg-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-800"><?= (int) $location['max_chance'] ?>%</span>
-                                        <?php endif; ?>
-                                    </span>
+        <section class="mt-6 grid gap-6 lg:grid-cols-3 lg:items-start">
+            <article class="rounded-3xl bg-zinc-100 p-6 lg:col-span-2">
+                <h2 class="mb-2 text-4xl font-extrabold">Moves</h2>
+                <form method="get" class="mt-3">
+                    <input type="hidden" name="id" value="<?= (int) $pokemon['pokemon_id'] ?>">
+                    <input type="hidden" name="method" value="<?= htmlspecialchars($selectedMethod) ?>">
+                    <div class="flex flex-col gap-3 md:flex-row md:items-end">
+                        <div class="w-full md:max-w-sm">
+                            <label for="version" class="text-sm font-semibold text-slate-700">Select Version:</label>
+                            <select id="version" name="version" onchange="this.form.submit()" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold">
+                                <?php foreach ($versionGroups as $version): ?>
+                                    <?php $color = $palette[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
+                                    <option value="<?= htmlspecialchars($version) ?>" style="background-color: <?= htmlspecialchars($color['bg']) ?>; color: <?= htmlspecialchars($color['text']) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($formatLabel((string) $version)) ?>
+                                    </option>
                                 <?php endforeach; ?>
-                            <?php endif; ?>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 md:ml-auto">
+                            <a href="details.php?id=<?= (int) $pokemon['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>&method=level-up" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'level-up' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">Level Up</a>
+                            <a href="details.php?id=<?= (int) $pokemon['pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>&method=machine" class="rounded px-3 py-1 font-semibold transition <?= $selectedMethod === 'machine' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200' ?>">TM/HM</a>
                         </div>
                     </div>
-                </div>
-            </form>
+                </form>
 
-            <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-                <table class="w-full text-sm">
-                    <thead>
-                    <tr class="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-700">
-                        <th class="px-4 py-3">Move name</th>
-                        <th class="px-4 py-3"><?= $selectedMethod === 'level-up' ? 'Learned at' : 'Method' ?></th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <?php if ($currentMoves === []): ?>
-                        <tr>
-                            <td colspan="2" class="px-4 py-4 text-slate-500">No moves for this method/version combination.</td>
+                <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+                    <table class="w-full text-sm">
+                        <thead>
+                        <tr class="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-700">
+                            <th class="px-4 py-3">Move name</th>
+                            <th class="px-4 py-3"><?= $selectedMethod === 'level-up' ? 'Learned at' : 'Method' ?></th>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($currentMoves as $move): ?>
-                            <tr class="border-t border-slate-200">
-                                <td class="px-4 py-3 font-medium capitalize"><?= htmlspecialchars(str_replace('-', ' ', (string) $move['name'])) ?></td>
-                                <td class="px-4 py-3"><?= $selectedMethod === 'level-up' ? (int) $move['level'] : htmlspecialchars($formatLabel((string) $move['method'])) ?></td>
+                        </thead>
+                        <tbody>
+                        <?php if ($currentMoves === []): ?>
+                            <tr>
+                                <td colspan="2" class="px-4 py-4 text-slate-500">No moves for this method/version combination.</td>
                             </tr>
+                        <?php else: ?>
+                            <?php foreach ($currentMoves as $move): ?>
+                                <tr class="border-t border-slate-200">
+                                    <td class="px-4 py-3 font-medium capitalize"><?= htmlspecialchars(str_replace('-', ' ', (string) $move['name'])) ?></td>
+                                    <td class="px-4 py-3"><?= $selectedMethod === 'level-up' ? (int) $move['level'] : htmlspecialchars($formatLabel((string) $move['method'])) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="rounded-3xl bg-zinc-100 p-6">
+                <h2 class="mb-4 text-center text-4xl font-extrabold">Locations</h2>
+                <div class="space-y-2">
+                    <?php if ($selectedVersion === ''): ?>
+                        <span class="block text-sm text-slate-500">No game version selected.</span>
+                    <?php elseif ($currentLocations === []): ?>
+                        <span class="block text-sm text-slate-500">No known encounter locations.</span>
+                    <?php else: ?>
+                        <?php foreach ($currentLocations as $location): ?>
+                            <span class="inline-flex w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-800">
+                                <span><?= htmlspecialchars($formatLabel((string) str_replace('-area', '', (string) $location['name']))) ?></span>
+                                <?php if ($location['max_chance'] !== null): ?>
+                                    <span class="rounded-full bg-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-800"><?= (int) $location['max_chance'] ?>%</span>
+                                <?php endif; ?>
+                            </span>
                         <?php endforeach; ?>
                     <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                </div>
+            </article>
         </section>
     <?php endif; ?>
 </main>
