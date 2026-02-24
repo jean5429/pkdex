@@ -21,6 +21,12 @@ This project was restructured into a PHP application backed by MySQL.
 php update_database.php
 ```
 
+Optional sync controls (via environment variables):
+- `POKEDEX_LIMIT` (default: `1025`) controls how many Pokémon are fetched per run.
+- `POKEDEX_START_FROM` (default: `1`) lets you resume from a specific Pokédex number (for example `500`).
+- `POKEDEX_OFFSET` (default: `0`) is still supported and is combined safely with `POKEDEX_START_FROM`.
+
+
 4. Start the PHP server:
 
 ```bash

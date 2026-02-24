@@ -13,7 +13,8 @@ return [
     ],
     'pokeapi' => [
         'base_url' => getenv('POKEAPI_BASE_URL') ?: 'https://pokeapi.co/api/v2',
-        'limit' => (int) (getenv('POKEDEX_LIMIT') ?: 151),
+        'limit' => (int) (getenv('POKEDEX_LIMIT') ?: 1025),
         'offset' => (int) (getenv('POKEDEX_OFFSET') ?: 0),
+        'start_from' => (int) (getenv('POKEDEX_START_FROM') ?: 1),
     ],
 ];

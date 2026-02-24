@@ -17,8 +17,10 @@ $pdo->exec($schemaSql);
 $baseUrl = rtrim((string) $config['pokeapi']['base_url'], '/');
 $limit = (int) $config['pokeapi']['limit'];
 $offset = (int) $config['pokeapi']['offset'];
+$startFrom = max(1, (int) ($config['pokeapi']['start_from'] ?? 1));
+$apiOffset = max($offset, $startFrom - 1);
 
-$listUrl = sprintf('%s/pokemon?limit=%d&offset=%d', $baseUrl, $limit, $offset);
+$listUrl = sprintf('%s/pokemon?limit=%d&offset=%d', $baseUrl, $limit, $apiOffset);
 $listResponse = apiGet($listUrl);
 
 if (!isset($listResponse['results']) || !is_array($listResponse['results'])) {
@@ -61,6 +63,8 @@ $deleteMovesStmt = $pdo->prepare('DELETE FROM pokemon_moves WHERE pokemon_id = :
 
 $total = count($listResponse['results']);
 $processed = 0;
+
+echo sprintf("Starting sync from Pokédex #%d (API offset %d) with limit %d.\n", $startFrom, $apiOffset, $limit);
 
 foreach ($listResponse['results'] as $item) {
     if (!isset($item['url']) || !is_string($item['url'])) {
