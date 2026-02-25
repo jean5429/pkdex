@@ -187,8 +187,44 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
     <link rel="shortcut icon" href="favicon.svg">
     <title>Pokémon details</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .page-loading-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(59, 130, 246, 0.16);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 50;
+            transition: opacity 180ms ease;
+        }
+
+        .page-loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 9999px;
+            border: 4px solid rgba(255, 255, 255, 0.45);
+            border-top-color: rgba(37, 99, 235, 1);
+            animation: spin 0.8s linear infinite;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-zinc-200 text-slate-800">
+<div id="page-loading-overlay" class="page-loading-overlay hidden" aria-hidden="true">
+    <div class="loading-spinner" role="status" aria-label="Loading"></div>
+</div>
 <main class="mx-auto max-w-7xl p-4 sm:p-6">
     <?php if ($pokemon === null): ?>
         <section class="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-red-900">
@@ -198,7 +234,7 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
         <header class="text-center">
             <h1 class="text-2xl font-extrabold tracking-tight capitalize sm:text-3xl md:text-5xl"><?= htmlspecialchars((string) $pokemon['name']) ?> <span class="text-blue-600">#<?= (int) $pokemon['pokemon_id'] ?></span></h1>
             <div class="mt-6">
-                <a href="index.php?version=<?= urlencode($selectedVersion) ?>" class="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-base font-bold text-white shadow sm:w-auto sm:px-8 sm:text-lg">← Back to Main List</a>
+                <a id="back-to-main-list" href="index.php?version=<?= urlencode($selectedVersion) ?>" class="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-base font-bold text-white shadow sm:w-auto sm:px-8 sm:text-lg">← Back to Main List</a>
             </div>
             <div class="mt-5 flex flex-wrap justify-center gap-3 text-sm font-semibold sm:text-base md:text-xl">
                 <?php if ($pokemon['neighbors']['previous'] !== null): ?>
@@ -369,6 +405,29 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
         </section>
     <?php endif; ?>
 </main>
+<script>
+    (() => {
+        const loadingOverlay = document.getElementById('page-loading-overlay');
+        const backToMainListLink = document.getElementById('back-to-main-list');
+
+        const showLoadingOverlay = () => {
+            if (!loadingOverlay) {
+                return;
+            }
+
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.setAttribute('aria-hidden', 'false');
+        };
+
+        backToMainListLink?.addEventListener('click', (event) => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+            }
+
+            showLoadingOverlay();
+        });
+    })();
+</script>
 <?php if ($pokemon !== null): ?>
     <script>
         (() => {
