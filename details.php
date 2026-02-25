@@ -16,21 +16,20 @@ $formatPercentage = static function ($value): string {
 
     return number_format((float) $value, 2) . '%';
 };
-$formatMachineType = static function (string $moveName): string {
-    $hiddenMachineMoves = [
-        'cut',
-        'fly',
-        'surf',
-        'strength',
-        'flash',
-        'whirlpool',
-        'waterfall',
-        'rock-smash',
-        'dive',
-        'defog',
-        'rock-climb',
-    ];
-
+$hiddenMachineMoves = [
+    'cut',
+    'fly',
+    'surf',
+    'strength',
+    'flash',
+    'whirlpool',
+    'waterfall',
+    'rock-smash',
+    'dive',
+    'defog',
+    'rock-climb',
+];
+$formatMachineType = static function (string $moveName) use ($hiddenMachineMoves): string {
     return in_array(strtolower($moveName), $hiddenMachineMoves, true) ? 'HM' : 'TM';
 };
 $selectedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
@@ -71,6 +70,20 @@ if ($selectedVersion !== '' && isset($pokemon['moves'][$selectedVersion])) {
 
         $movesByMethod[$method][] = $move;
     }
+
+    usort(
+        $movesByMethod['machine'],
+        static function (array $a, array $b) use ($hiddenMachineMoves): int {
+            $typeRankA = in_array(strtolower((string) $a['name']), $hiddenMachineMoves, true) ? 0 : 1;
+            $typeRankB = in_array(strtolower((string) $b['name']), $hiddenMachineMoves, true) ? 0 : 1;
+
+            if ($typeRankA !== $typeRankB) {
+                return $typeRankA <=> $typeRankB;
+            }
+
+            return (string) $a['name'] <=> (string) $b['name'];
+        }
+    );
 
     $currentMoves = $movesByMethod[$selectedMethod] ?? [];
 }
