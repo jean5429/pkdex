@@ -194,7 +194,7 @@ foreach ($availableVersions as $versionKey) {
                     </div>
                     <ul id="tmhm-grid" class="divide-y divide-slate-100">
                         <?php foreach ($gameTmhm as $entry): ?>
-                            <li class="tmhm-card grid grid-cols-3 gap-2 px-3 py-2 text-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>" data-machine-number="<?= (int) $entry['number'] ?>">
+                            <li class="tmhm-card grid grid-cols-3 gap-2 px-3 py-2 text-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>" data-machine-number="<?= (int) $entry['number'] ?>" data-machine-name="<?= htmlspecialchars(strtolower((string) pkdexFormatGameVersionLabel((string) $entry['name']))) ?>">
                                 <p class="font-semibold text-slate-700"><?= htmlspecialchars((string) $entry['type']) ?></p>
                                 <p class="font-mono text-slate-600"><?= (int) $entry['number'] ?></p>
                                 <p class="font-semibold capitalize text-slate-900"><?= htmlspecialchars(pkdexFormatGameVersionLabel((string) $entry['name'])) ?></p>
@@ -410,10 +410,14 @@ foreach ($availableVersions as $versionKey) {
 
         let visibleTmhm = 0;
         getTmhmCards().forEach((card) => {
+            const machineName = (card.dataset.machineName || '').toLowerCase();
+            const machineNumber = String(card.dataset.machineNumber || '');
             const type = (card.dataset.machineType || '').toLowerCase();
+            const matchesSearch = searchTerm === '' || machineName.includes(searchTerm) || machineNumber.includes(searchTerm);
             const matchesType = activeTmhmType === 'all' || type === activeTmhmType;
-            card.classList.toggle('hidden', !matchesType);
-            if (matchesType) {
+            const isVisible = matchesType && (activeTab !== 'tmhm' || matchesSearch);
+            card.classList.toggle('hidden', !isVisible);
+            if (isVisible) {
                 visibleTmhm += 1;
             }
         });
@@ -491,8 +495,10 @@ foreach ($availableVersions as $versionKey) {
     tabButtons.forEach((button) => {
         button.addEventListener('click', () => {
             activeTab = button.dataset.tab || 'pokemon';
+            searchInput.value = '';
             setStoredValue(STORAGE_TAB_KEY, activeTab);
             setActiveTab();
+            applyFilters();
         });
     });
 
