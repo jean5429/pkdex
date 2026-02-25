@@ -126,7 +126,17 @@ foreach ($availableVersions as $versionKey) {
             <div>
                 <label class="font-semibold text-sm">🎮 Game version</label>
                 <input type="hidden" id="version" name="version" value="<?= htmlspecialchars($selectedVersion) ?>">
-                <div id="version-selector" class="mt-2 flex flex-wrap gap-2 rounded-lg border border-slate-300 bg-slate-50 p-2">
+                <div class="mt-2 sm:hidden">
+                    <label for="version-mobile" class="sr-only">Select game version</label>
+                    <select id="version-mobile" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800">
+                        <?php foreach ($availableVersions as $version): ?>
+                            <option value="<?= htmlspecialchars($version) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
+                                <?= htmlspecialchars(pkdexFormatGameVersionLabel($version)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div id="version-selector" class="mt-2 hidden flex-wrap gap-2 rounded-lg border border-slate-300 bg-slate-50 p-2 sm:flex">
                     <?php foreach ($availableVersions as $version): ?>
                         <?php $style = $versionStyleMap[$version] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a']; ?>
                         <button
@@ -202,6 +212,7 @@ foreach ($availableVersions as $versionKey) {
     const form = document.getElementById('filters-form');
     const searchInput = document.getElementById('search');
     const versionInput = document.getElementById('version');
+    const mobileVersionSelect = document.getElementById('version-mobile');
     const versionButtons = document.querySelectorAll('.version-option');
     const activeTabInput = document.getElementById('active-tab-input');
     const genButtons = document.querySelectorAll('.gen-filter-btn');
@@ -511,10 +522,27 @@ foreach ($availableVersions as $versionKey) {
     }
 
     searchInput.addEventListener('input', applyFilters);
+
+    if (mobileVersionSelect) {
+        mobileVersionSelect.addEventListener('change', () => {
+            const selectedValue = mobileVersionSelect.value || '';
+            versionInput.value = selectedValue;
+            versionButtons.forEach((item) => {
+                const active = (item.dataset.versionOption || '') === selectedValue;
+                item.classList.toggle('ring-2', active);
+                item.classList.toggle('ring-blue-500', active);
+            });
+            syncUrlWithFilters();
+        });
+    }
+
     versionButtons.forEach((button) => {
         button.addEventListener('click', () => {
             const selectedValue = button.dataset.versionOption || '';
             versionInput.value = selectedValue;
+            if (mobileVersionSelect) {
+                mobileVersionSelect.value = selectedValue;
+            }
             versionButtons.forEach((item) => {
                 const active = (item.dataset.versionOption || '') === selectedValue;
                 item.classList.toggle('ring-2', active);
