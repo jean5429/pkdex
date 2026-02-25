@@ -9,6 +9,13 @@ $repository = new PokemonRepository((new Database($config['db']))->pdo());
 $pokemon = $id > 0 ? $repository->getPokemonDetails($id) : null;
 
 $formatLabel = static fn (string $value): string => pkdexFormatGameVersionLabel($value);
+$formatPercentage = static function ($value): string {
+    if (!is_numeric($value)) {
+        return 'Unknown';
+    }
+
+    return number_format((float) $value, 2) . '%';
+};
 $formatMachineType = static function (string $moveName): string {
     $hiddenMachineMoves = [
         'cut',
@@ -202,6 +209,8 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 </div>
                 <h3 class="mt-6 text-center text-2xl font-bold capitalize"><?= htmlspecialchars((string) $pokemon['name']) ?></h3>
                 <p class="mt-3 text-center text-base sm:text-xl">Height: <?= number_format(((int) $pokemon['height']) / 10, 2) ?> m | Weight: <?= number_format(((int) $pokemon['weight']) / 10, 2) ?> kg</p>
+                <p class="mt-2 text-center text-base sm:text-lg">Gender: ♂ <?= htmlspecialchars($formatPercentage($pokemon['male_percentage'] ?? null)) ?> | ♀ <?= htmlspecialchars($formatPercentage($pokemon['female_percentage'] ?? null)) ?></p>
+                <p class="mt-1 text-center text-base sm:text-lg">Egg Group: <?= htmlspecialchars((string) ($pokemon['egg_groups'] ?: 'Unknown')) ?></p>
                 <div class="mt-5 flex flex-wrap justify-center gap-2">
                     <?php foreach ($pokemon['types'] as $type): ?>
                         <?php $typeKey = strtolower((string) $type); ?>
