@@ -271,6 +271,10 @@ foreach ($availableVersions as $versionKey) {
         ? queryTab
         : ((savedTab === 'pokemon' || savedTab === 'tmhm') ? savedTab : 'pokemon');
     let activeTmhmType = 'all';
+    const searchPlaceholderByTab = {
+        pokemon: 'pikachu or 25',
+        tmhm: 'fly or 10',
+    };
 
     function getCards() {
         return grid ? Array.from(grid.querySelectorAll('.pokemon-card')) : [];
@@ -356,6 +360,10 @@ foreach ($availableVersions as $versionKey) {
     function setActiveTab() {
         if (activeTabInput) {
             activeTabInput.value = activeTab === 'pokemon' ? '' : activeTab;
+        }
+
+        if (searchInput) {
+            searchInput.placeholder = searchPlaceholderByTab[activeTab] || searchPlaceholderByTab.pokemon;
         }
 
         tabButtons.forEach((button) => {
