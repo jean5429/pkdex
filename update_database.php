@@ -20,11 +20,11 @@ if ($schemaSql === false) {
 $pdo->exec($schemaSql);
 
 // Lightweight compatibility migration for existing installations.
-$pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS sprite_shiny_url VARCHAR(255) DEFAULT NULL');
-$pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS male_percentage DECIMAL(5,2) DEFAULT NULL');
-$pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS female_percentage DECIMAL(5,2) DEFAULT NULL');
-$pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS egg_groups VARCHAR(255) DEFAULT NULL');
-$pdo->exec('CREATE TABLE IF NOT EXISTS game_tmhm (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, move_name VARCHAR(100) NOT NULL, machine_name VARCHAR(100) NOT NULL, game_version VARCHAR(80) NOT NULL, UNIQUE KEY unique_tmhm_per_version (move_name, machine_name, game_version))');
+// $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS sprite_shiny_url VARCHAR(255) DEFAULT NULL');
+// $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS male_percentage DECIMAL(5,2) DEFAULT NULL');
+// $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS female_percentage DECIMAL(5,2) DEFAULT NULL');
+// $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS egg_groups VARCHAR(255) DEFAULT NULL');
+// $pdo->exec('CREATE TABLE IF NOT EXISTS game_tmhm (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, move_name VARCHAR(100) NOT NULL, machine_name VARCHAR(100) NOT NULL, game_version VARCHAR(80) NOT NULL, UNIQUE KEY unique_tmhm_per_version (move_name, machine_name, game_version))');
 
 $baseUrl = rtrim((string) $config['pokeapi']['base_url'], '/');
 $limit = (int) $config['pokeapi']['limit'];
