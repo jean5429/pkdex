@@ -152,7 +152,7 @@ final class PokemonRepository
     public function getPokemonDetails(int $pokemonId): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT pokemon_id, name, sprite_url, sprite_shiny_url, height, weight, base_experience, updated_at
+            'SELECT pokemon_id, name, sprite_url, sprite_shiny_url, height, weight, base_experience, male_percentage, female_percentage, egg_groups, updated_at
              FROM pokemon
              WHERE pokemon_id = :pokemonId'
         );

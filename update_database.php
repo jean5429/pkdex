@@ -21,6 +21,9 @@ $pdo->exec($schemaSql);
 
 // Lightweight compatibility migration for existing installations.
 $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS sprite_shiny_url VARCHAR(255) DEFAULT NULL');
+$pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS male_percentage DECIMAL(5,2) DEFAULT NULL');
+$pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS female_percentage DECIMAL(5,2) DEFAULT NULL');
+$pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS egg_groups VARCHAR(255) DEFAULT NULL');
 $pdo->exec('CREATE TABLE IF NOT EXISTS game_tmhm (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, move_name VARCHAR(100) NOT NULL, machine_name VARCHAR(100) NOT NULL, game_version VARCHAR(80) NOT NULL, UNIQUE KEY unique_tmhm_per_version (move_name, machine_name, game_version))');
 
 $baseUrl = rtrim((string) $config['pokeapi']['base_url'], '/');
@@ -37,8 +40,8 @@ if (!isset($listResponse['results']) || !is_array($listResponse['results'])) {
 }
 
 $pokemonStmt = $pdo->prepare(
-    'INSERT INTO pokemon (pokemon_id, name, sprite_url, sprite_shiny_url, height, weight, base_experience)
-     VALUES (:pokemon_id, :name, :sprite_url, :sprite_shiny_url, :height, :weight, :base_experience)
+    'INSERT INTO pokemon (pokemon_id, name, sprite_url, sprite_shiny_url, height, weight, base_experience, male_percentage, female_percentage, egg_groups)
+     VALUES (:pokemon_id, :name, :sprite_url, :sprite_shiny_url, :height, :weight, :base_experience, :male_percentage, :female_percentage, :egg_groups)
      ON DUPLICATE KEY UPDATE
         name = VALUES(name),
         sprite_url = VALUES(sprite_url),
@@ -46,6 +49,9 @@ $pokemonStmt = $pdo->prepare(
         height = VALUES(height),
         weight = VALUES(weight),
         base_experience = VALUES(base_experience),
+        male_percentage = VALUES(male_percentage),
+        female_percentage = VALUES(female_percentage),
+        egg_groups = VALUES(egg_groups),
         updated_at = CURRENT_TIMESTAMP'
 );
 
@@ -114,6 +120,31 @@ foreach ($listResponse['results'] as $item) {
 
     $pokemonId = $pokemonData['id'];
 
+    $speciesData = [];
+    if (isset($pokemonData['species']['url']) && is_string($pokemonData['species']['url'])) {
+        $speciesData = apiGet((string) $pokemonData['species']['url']);
+    }
+
+    $genderRate = isset($speciesData['gender_rate']) ? (int) $speciesData['gender_rate'] : -1;
+    $femalePercentage = ($genderRate >= 0 && $genderRate <= 8) ? round(($genderRate / 8) * 100, 2) : null;
+    $malePercentage = $femalePercentage !== null ? round(100 - $femalePercentage, 2) : null;
+
+    $eggGroupNames = [];
+    foreach (($speciesData['egg_groups'] ?? []) as $eggGroup) {
+        if (!is_array($eggGroup)) {
+            continue;
+        }
+
+        $eggGroupName = isset($eggGroup['name']) ? (string) $eggGroup['name'] : '';
+        if ($eggGroupName === '') {
+            continue;
+        }
+
+        $eggGroupNames[] = $eggGroupName;
+    }
+
+    $eggGroups = $eggGroupNames !== [] ? implode(', ', $eggGroupNames) : null;
+
     $pdo->beginTransaction();
 
     try {
@@ -125,6 +156,9 @@ foreach ($listResponse['results'] as $item) {
             ':height' => (int) ($pokemonData['height'] ?? 0),
             ':weight' => (int) ($pokemonData['weight'] ?? 0),
             ':base_experience' => isset($pokemonData['base_experience']) ? (int) $pokemonData['base_experience'] : null,
+            ':male_percentage' => $malePercentage,
+            ':female_percentage' => $femalePercentage,
+            ':egg_groups' => $eggGroups,
         ]);
 
         $deleteTypesStmt->execute([':pokemon_id' => $pokemonId]);
@@ -241,8 +275,7 @@ foreach ($listResponse['results'] as $item) {
             }
         }
 
-        if (isset($pokemonData['species']['url']) && is_string($pokemonData['species']['url'])) {
-            $speciesData = apiGet((string) $pokemonData['species']['url']);
+        if ($speciesData !== []) {
             $chainUrl = isset($speciesData['evolution_chain']['url']) ? (string) $speciesData['evolution_chain']['url'] : '';
             $chainId = extractIdFromUrl($chainUrl);
 
