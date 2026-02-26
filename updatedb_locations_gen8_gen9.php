@@ -274,11 +274,30 @@ function addLocationRow(array &$locationMap, string $rawGame, string $rawLocatio
         return;
     }
 
-    $locationName = mb_substr($rawLocation, 0, 120);
+    $locationName = utf8SafeSubstr($rawLocation, 120);
     $locationMap[$gameVersion . '|' . $locationName] = [
         'game_version' => $gameVersion,
         'location_name' => $locationName,
     ];
+}
+
+function utf8SafeSubstr(string $value, int $maxLength): string
+{
+    if ($maxLength <= 0) {
+        return '';
+    }
+
+    if (function_exists('mb_substr')) {
+        return mb_substr($value, 0, $maxLength, 'UTF-8');
+    }
+
+    if (function_exists('iconv_substr')) {
+        $truncated = iconv_substr($value, 0, $maxLength, 'UTF-8');
+
+        return $truncated === false ? '' : $truncated;
+    }
+
+    return substr($value, 0, $maxLength);
 }
 
 function mapPokemonDbGameToProjectVersion(string $gameLabel): ?string
