@@ -89,6 +89,15 @@ if ($selectedVersion !== '' && isset($pokemon['moves'][$selectedVersion])) {
 }
 
 $currentLocations = [];
+$hideLocationsForVersions = [
+    'legends-arceus',
+    'legends-za',
+    'legends-z-a',
+    'pokemon-legends-za',
+    'pokemon-legends-z-a',
+];
+$shouldHideLocations = in_array(strtolower($selectedVersion), $hideLocationsForVersions, true);
+
 if ($selectedVersion !== '' && isset($pokemon['locations'][$selectedVersion])) {
     foreach ($pokemon['locations'][$selectedVersion] as $location) {
         $locationName = (string) ($location['name'] ?? '');
@@ -400,25 +409,27 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 </div>
             </article>
 
-            <article class="rounded-3xl bg-zinc-100 p-6">
-                <h2 class="mb-4 text-center text-3xl font-extrabold">🗺️ Locations</h2>
-                <div class="space-y-2">
-                    <?php if ($selectedVersion === ''): ?>
-                        <span class="block text-sm text-slate-500">No game version selected.</span>
-                    <?php elseif ($currentLocations === []): ?>
-                        <span class="block text-sm text-slate-500">No known encounter locations.</span>
-                    <?php else: ?>
-                        <?php foreach ($currentLocations as $location): ?>
-                            <span class="inline-flex w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-800">
-                                <span><?= htmlspecialchars($formatLabel((string) str_replace('-area', '', (string) $location['name']))) ?></span>
-                                <?php if ($location['max_chance'] !== null): ?>
-                                    <span class="rounded-full bg-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-800"><?= (int) $location['max_chance'] ?>%</span>
-                                <?php endif; ?>
-                            </span>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </article>
+            <?php if (!$shouldHideLocations): ?>
+                <article class="rounded-3xl bg-zinc-100 p-6">
+                    <h2 class="mb-4 text-center text-3xl font-extrabold">🗺️ Locations</h2>
+                    <div class="space-y-2">
+                        <?php if ($selectedVersion === ''): ?>
+                            <span class="block text-sm text-slate-500">No game version selected.</span>
+                        <?php elseif ($currentLocations === []): ?>
+                            <span class="block text-sm text-slate-500">No known encounter locations.</span>
+                        <?php else: ?>
+                            <?php foreach ($currentLocations as $location): ?>
+                                <span class="inline-flex w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-800">
+                                    <span><?= htmlspecialchars($formatLabel((string) str_replace('-area', '', (string) $location['name']))) ?></span>
+                                    <?php if ($location['max_chance'] !== null): ?>
+                                        <span class="rounded-full bg-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-800"><?= (int) $location['max_chance'] ?>%</span>
+                                    <?php endif; ?>
+                                </span>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </article>
+            <?php endif; ?>
         </section>
     <?php endif; ?>
 </main>
