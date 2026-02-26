@@ -190,7 +190,9 @@ function parseLocationsWithDom(string $html): array
         $lastGame = '';
 
         foreach ($rows as $row) {
-            $cells = $xpath->query('./td', $row);
+            // Pokémon DB sometimes uses <th> for the "Game" column and <td> for location.
+            // Read both so we can correctly detect game/location pairs in either markup shape.
+            $cells = $xpath->query('./th|./td', $row);
             if ($cells === false || $cells->length === 0) {
                 continue;
             }
@@ -231,7 +233,7 @@ function parseLocationsWithoutDom(string $html): array
         $lastGame = '';
 
         foreach ($rowMatches[1] ?? [] as $rowHtml) {
-            preg_match_all('/<td\b[^>]*>(.*?)<\/td>/is', $rowHtml, $cellMatches);
+            preg_match_all('/<(?:th|td)\b[^>]*>(.*?)<\/(?:th|td)>/is', $rowHtml, $cellMatches);
             $cells = $cellMatches[1] ?? [];
             if (count($cells) === 0) {
                 continue;
