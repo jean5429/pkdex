@@ -27,11 +27,11 @@ $insertStmt = $pdo->prepare(
      ON DUPLICATE KEY UPDATE location_name = VALUES(location_name), max_chance = VALUES(max_chance)'
 );
 
-$selectStmt->execute([':min_id' => 810, ':max_id' => 1025]);
+$selectStmt->execute([':min_id' => 1, ':max_id' => 1025]);
 $targets = $selectStmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($targets === []) {
-    throw new RuntimeException('No Pokémon found in DB for National Dex range 810-1025. Run update_database.php first.');
+    throw new RuntimeException('No Pokémon found in DB for National Dex range 1-1025. Run update_database.php first.');
 }
 
 $processed = 0;
