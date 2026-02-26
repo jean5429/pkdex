@@ -94,10 +94,59 @@ echo sprintf("Done. Updated: %d, Failed: %d\n", $updated, $failed);
  */
 function fetchLocationsFromPokemonDb(string $sourceBaseUrl, string $pokemonName): array
 {
-    $url = sprintf('%s/%s/locations', rtrim($sourceBaseUrl, '/'), rawurlencode(strtolower($pokemonName)));
-    $html = httpGetHtml($url);
+    $slugs = resolvePokemonDbSlugCandidates($pokemonName);
+    $lastException = null;
 
-    return parseLocationsFromHtml($html);
+    foreach ($slugs as $slug) {
+        $url = sprintf('%s/%s/locations', rtrim($sourceBaseUrl, '/'), rawurlencode($slug));
+
+        try {
+            $html = httpGetHtml($url);
+        } catch (RuntimeException $exception) {
+            $lastException = $exception;
+            continue;
+        }
+
+        return parseLocationsFromHtml($html);
+    }
+
+    if ($lastException instanceof RuntimeException) {
+        throw $lastException;
+    }
+
+    throw new RuntimeException('Unable to resolve a Pokémon DB URL for ' . $pokemonName);
+}
+
+/**
+ * @return array<int, string>
+ */
+function resolvePokemonDbSlugCandidates(string $pokemonName): array
+{
+    $slug = strtolower(trim($pokemonName));
+
+    $canonicalOverrides = [
+        'toxtricity-amped' => 'toxtricity',
+        'eiscue-ice' => 'eiscue',
+        'indeedee-male' => 'indeedee',
+        'morpeko-full-belly' => 'morpeko',
+        'urshifu-single-strike' => 'urshifu',
+        'basculegion-male' => 'basculegion',
+        'enamorus-incarnate' => 'enamorus',
+        'oinkologne-male' => 'oinkologne',
+        'maushold-family-of-four' => 'maushold',
+        'squawkabilly-green-plumage' => 'squawkabilly',
+        'palafin-zero' => 'palafin',
+        'tatsugiri-curly' => 'tatsugiri',
+        'dudunsparce-two-segment' => 'dudunsparce',
+    ];
+
+    $candidates = [$slug];
+
+    if (isset($canonicalOverrides[$slug])) {
+        $candidates[] = $canonicalOverrides[$slug];
+    }
+
+    return array_values(array_unique($candidates));
 }
 
 /**
@@ -123,21 +172,41 @@ function parseLocationsWithDom(string $html): array
     }
 
     $xpath = new DOMXPath($dom);
-    $rows = $xpath->query('//table[.//th[contains(translate(normalize-space(.), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"), "game")] and .//th[contains(translate(normalize-space(.), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"), "location")]]//tr');
+    $locationMap = [];
 
-    if ($rows === false || $rows->length === 0) {
+    $tables = $xpath->query('//table[.//th[contains(translate(normalize-space(.), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"), "location")]]');
+    if ($tables === false || $tables->length === 0) {
         return [];
     }
 
-    $locationMap = [];
+    foreach ($tables as $table) {
+        $tableGameContext = normalizeText($xpath->evaluate('string(preceding::*[self::h2 or self::h3][1])', $table));
 
-    foreach ($rows as $row) {
-        $cells = $xpath->query('./td', $row);
-        if ($cells === false || $cells->length < 2) {
+        $rows = $xpath->query('.//tr', $table);
+        if ($rows === false) {
             continue;
         }
 
-        addLocationRow($locationMap, $cells->item(0)?->textContent ?? '', $cells->item(1)?->textContent ?? '');
+        $lastGame = '';
+
+        foreach ($rows as $row) {
+            $cells = $xpath->query('./td', $row);
+            if ($cells === false || $cells->length === 0) {
+                continue;
+            }
+
+            $first = $cells->item(0)?->textContent ?? '';
+            $second = $cells->item(1)?->textContent ?? '';
+
+            if ($cells->length >= 2 && mapPokemonDbGameToProjectVersion(normalizeText($first)) !== null) {
+                $lastGame = $first;
+                addLocationRow($locationMap, $first, $second);
+                continue;
+            }
+
+            $gameForRow = $lastGame !== '' ? $lastGame : $tableGameContext;
+            addLocationRow($locationMap, $gameForRow, $first);
+        }
     }
 
     return array_values($locationMap);
@@ -154,19 +223,32 @@ function parseLocationsWithoutDom(string $html): array
 
     foreach ($tableMatches[1] ?? [] as $tableHtml) {
         $normalizedTable = strtolower(strip_tags($tableHtml));
-        if (!str_contains($normalizedTable, 'game') || !str_contains($normalizedTable, 'location')) {
+        if (!str_contains($normalizedTable, 'location')) {
             continue;
         }
 
         preg_match_all('/<tr\b[^>]*>(.*?)<\/tr>/is', $tableHtml, $rowMatches);
+        $lastGame = '';
 
         foreach ($rowMatches[1] ?? [] as $rowHtml) {
             preg_match_all('/<td\b[^>]*>(.*?)<\/td>/is', $rowHtml, $cellMatches);
-            if (count($cellMatches[1] ?? []) < 2) {
+            $cells = $cellMatches[1] ?? [];
+            if (count($cells) === 0) {
                 continue;
             }
 
-            addLocationRow($locationMap, html_entity_decode(strip_tags($cellMatches[1][0]), ENT_QUOTES | ENT_HTML5), html_entity_decode(strip_tags($cellMatches[1][1]), ENT_QUOTES | ENT_HTML5));
+            $first = html_entity_decode(strip_tags($cells[0]), ENT_QUOTES | ENT_HTML5);
+            $second = isset($cells[1]) ? html_entity_decode(strip_tags($cells[1]), ENT_QUOTES | ENT_HTML5) : '';
+
+            if (isset($cells[1]) && mapPokemonDbGameToProjectVersion(normalizeText($first)) !== null) {
+                $lastGame = $first;
+                addLocationRow($locationMap, $first, $second);
+                continue;
+            }
+
+            if ($lastGame !== '') {
+                addLocationRow($locationMap, $lastGame, $first);
+            }
         }
     }
 
