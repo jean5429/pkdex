@@ -90,7 +90,24 @@ if ($selectedVersion !== '' && isset($pokemon['moves'][$selectedVersion])) {
 
 $currentLocations = [];
 if ($selectedVersion !== '' && isset($pokemon['locations'][$selectedVersion])) {
-    $currentLocations = $pokemon['locations'][$selectedVersion];
+    foreach ($pokemon['locations'][$selectedVersion] as $location) {
+        $locationName = (string) ($location['name'] ?? '');
+        $locationParts = array_filter(
+            array_map('trim', explode(',', $locationName)),
+            static fn (string $part): bool => $part !== ''
+        );
+
+        if ($locationParts === []) {
+            continue;
+        }
+
+        foreach ($locationParts as $locationPart) {
+            $currentLocations[] = [
+                'name' => $locationPart,
+                'max_chance' => $location['max_chance'] ?? null,
+            ];
+        }
+    }
 }
 
 if ($movesByMethod === []) {
