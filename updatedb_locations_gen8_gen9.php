@@ -97,6 +97,26 @@ function fetchLocationsFromPokemonDb(string $sourceBaseUrl, string $pokemonName)
     $url = sprintf('%s/%s/locations', rtrim($sourceBaseUrl, '/'), rawurlencode(strtolower($pokemonName)));
     $html = httpGetHtml($url);
 
+    return parseLocationsFromHtml($html);
+}
+
+/**
+ * @return array<int, array{game_version:string,location_name:string}>
+ */
+function parseLocationsFromHtml(string $html): array
+{
+    if (class_exists(DOMDocument::class)) {
+        return parseLocationsWithDom($html);
+    }
+
+    return parseLocationsWithoutDom($html);
+}
+
+/**
+ * @return array<int, array{game_version:string,location_name:string}>
+ */
+function parseLocationsWithDom(string $html): array
+{
     $dom = new DOMDocument();
     if (@$dom->loadHTML($html) === false) {
         throw new RuntimeException('Failed to parse HTML from source page.');
@@ -117,26 +137,64 @@ function fetchLocationsFromPokemonDb(string $sourceBaseUrl, string $pokemonName)
             continue;
         }
 
-        $rawGame = normalizeText($cells->item(0)?->textContent ?? '');
-        $rawLocation = normalizeText($cells->item(1)?->textContent ?? '');
-
-        if ($rawGame === '' || $rawLocation === '') {
-            continue;
-        }
-
-        $gameVersion = mapPokemonDbGameToProjectVersion($rawGame);
-        if ($gameVersion === null) {
-            continue;
-        }
-
-        $locationName = mb_substr($rawLocation, 0, 120);
-        $locationMap[$gameVersion . '|' . $locationName] = [
-            'game_version' => $gameVersion,
-            'location_name' => $locationName,
-        ];
+        addLocationRow($locationMap, $cells->item(0)?->textContent ?? '', $cells->item(1)?->textContent ?? '');
     }
 
     return array_values($locationMap);
+}
+
+/**
+ * @return array<int, array{game_version:string,location_name:string}>
+ */
+function parseLocationsWithoutDom(string $html): array
+{
+    preg_match_all('/<table\b[^>]*>(.*?)<\/table>/is', $html, $tableMatches);
+
+    $locationMap = [];
+
+    foreach ($tableMatches[1] ?? [] as $tableHtml) {
+        $normalizedTable = strtolower(strip_tags($tableHtml));
+        if (!str_contains($normalizedTable, 'game') || !str_contains($normalizedTable, 'location')) {
+            continue;
+        }
+
+        preg_match_all('/<tr\b[^>]*>(.*?)<\/tr>/is', $tableHtml, $rowMatches);
+
+        foreach ($rowMatches[1] ?? [] as $rowHtml) {
+            preg_match_all('/<td\b[^>]*>(.*?)<\/td>/is', $rowHtml, $cellMatches);
+            if (count($cellMatches[1] ?? []) < 2) {
+                continue;
+            }
+
+            addLocationRow($locationMap, html_entity_decode(strip_tags($cellMatches[1][0]), ENT_QUOTES | ENT_HTML5), html_entity_decode(strip_tags($cellMatches[1][1]), ENT_QUOTES | ENT_HTML5));
+        }
+    }
+
+    return array_values($locationMap);
+}
+
+/**
+ * @param array<string, array{game_version:string,location_name:string}> $locationMap
+ */
+function addLocationRow(array &$locationMap, string $rawGame, string $rawLocation): void
+{
+    $rawGame = normalizeText($rawGame);
+    $rawLocation = normalizeText($rawLocation);
+
+    if ($rawGame === '' || $rawLocation === '') {
+        return;
+    }
+
+    $gameVersion = mapPokemonDbGameToProjectVersion($rawGame);
+    if ($gameVersion === null) {
+        return;
+    }
+
+    $locationName = mb_substr($rawLocation, 0, 120);
+    $locationMap[$gameVersion . '|' . $locationName] = [
+        'game_version' => $gameVersion,
+        'location_name' => $locationName,
+    ];
 }
 
 function mapPokemonDbGameToProjectVersion(string $gameLabel): ?string
