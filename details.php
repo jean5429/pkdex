@@ -90,7 +90,6 @@ if ($selectedVersion !== '' && isset($pokemon['moves'][$selectedVersion])) {
 
 $currentLocations = [];
 $hideLocationsForVersions = [
-    'legends-arceus',
     'legends-za',
     'legends-z-a',
     'pokemon-legends-za',
