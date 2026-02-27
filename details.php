@@ -418,6 +418,8 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                             <span class="block text-sm text-slate-500">No known encounter locations.</span>
                         <?php else: ?>
                             <?php foreach ($currentLocations as $location): ?>
+                                <?php if (strpos($location['name'], 'Legends') !== false) continue; ?>
+                                <?php if (is_numeric($location['name'])) continue; ?>
                                 <span class="inline-flex w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-800">
                                     <span><?= htmlspecialchars($formatLabel((string) str_replace('-area', '', (string) $location['name']))) ?></span>
                                     <?php if ($location['max_chance'] !== null): ?>
