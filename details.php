@@ -397,8 +397,9 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                                 <?php continue; ?>
                             <?php endif; ?>
 
+                            <?php $isSingleEvolution = count($stageGroup) === 1; ?>
                             <p class="mb-3 text-3xl text-slate-400">↓</p>
-                            <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div class="mb-4 <?= $isSingleEvolution ? 'flex justify-center' : 'grid grid-cols-1 gap-4 sm:grid-cols-2' ?>">
                                 <?php foreach ($stageGroup as $stage): ?>
                                     <?php
                                     $method = trim((string) ($stage['evolution_method'] ?? ''));
@@ -406,7 +407,7 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                                         $method = 'Level ' . (int) $stage['min_level'];
                                     }
                                     ?>
-                                    <div class="text-center">
+                                    <div class="text-center <?= $isSingleEvolution ? 'w-full max-w-[10rem]' : '' ?>">
                                         <a href="details.php?id=<?= (int) $stage['to_pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="inline-block transition hover:scale-105" title="View <?= htmlspecialchars($formatLabel((string) $stage['name'])) ?> details">
                                             <img src="<?= htmlspecialchars((string) $stage['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $stage['name']) ?>" class="mx-auto h-16 w-16 md:h-20 md:w-20">
                                             <p class="text-base capitalize md:text-xl <?= (int) $stage['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-bold text-emerald-600' : 'font-medium text-slate-700 hover:text-blue-600' ?>"><?= htmlspecialchars((string) $stage['name']) ?></p>
