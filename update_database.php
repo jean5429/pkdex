@@ -70,6 +70,7 @@ $statStmt = $pdo->prepare(
 
 ensureEvolutionMethodColumn($pdo);
 ensureGameTmhmMetadataColumns($pdo);
+ensureMoveMetadataTable($pdo);
 
 $moveStmt = $pdo->prepare(
     'INSERT INTO pokemon_moves (pokemon_id, move_name, learn_method, level_learned_at, game_version)
@@ -111,6 +112,37 @@ $gameTmhmStmt = $pdo->prepare(
     )
      ON DUPLICATE KEY UPDATE
         machine_name = VALUES(machine_name),
+        move_type = VALUES(move_type),
+        move_category = VALUES(move_category),
+        move_power = VALUES(move_power),
+        move_accuracy = VALUES(move_accuracy),
+        move_pp = VALUES(move_pp),
+        move_max_pp = VALUES(move_max_pp),
+        makes_contact = VALUES(makes_contact)'
+);
+
+$moveMetadataStmt = $pdo->prepare(
+    'INSERT INTO move_metadata (
+        move_name,
+        move_type,
+        move_category,
+        move_power,
+        move_accuracy,
+        move_pp,
+        move_max_pp,
+        makes_contact
+    )
+     VALUES (
+        :move_name,
+        :move_type,
+        :move_category,
+        :move_power,
+        :move_accuracy,
+        :move_pp,
+        :move_max_pp,
+        :makes_contact
+    )
+     ON DUPLICATE KEY UPDATE
         move_type = VALUES(move_type),
         move_category = VALUES(move_category),
         move_power = VALUES(move_power),
@@ -272,6 +304,18 @@ foreach ($listResponse['results'] as $item) {
                 }
             }
 
+
+            $moveMetadataStmt->execute([
+                ':move_name' => $moveName,
+                ':move_type' => $moveType,
+                ':move_category' => $damageClass,
+                ':move_power' => $power,
+                ':move_accuracy' => $accuracy,
+                ':move_pp' => $pp,
+                ':move_max_pp' => $maxPp,
+                ':makes_contact' => $makesContact,
+            ]);
+
             foreach (($moveData['machines'] ?? []) as $machineData) {
                 if (!is_array($machineData)) {
                     continue;
@@ -408,6 +452,26 @@ function ensureGameTmhmMetadataColumns(PDO $pdo): void
         }
     }
 }
+
+function ensureMoveMetadataTable(PDO $pdo): void
+{
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS move_metadata (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            move_name VARCHAR(100) NOT NULL UNIQUE,
+            move_type VARCHAR(20) DEFAULT NULL,
+            move_category VARCHAR(20) DEFAULT NULL,
+            move_power SMALLINT UNSIGNED DEFAULT NULL,
+            move_accuracy SMALLINT UNSIGNED DEFAULT NULL,
+            move_pp SMALLINT UNSIGNED DEFAULT NULL,
+            move_max_pp SMALLINT UNSIGNED DEFAULT NULL,
+            makes_contact TINYINT(1) DEFAULT NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )'
+    );
+}
+
 /**
  * @param array<string, mixed> $chainNode
  */
