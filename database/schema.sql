@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS game_tmhm (
     move_name VARCHAR(100) NOT NULL,
     machine_name VARCHAR(100) NOT NULL,
     game_version VARCHAR(80) NOT NULL,
+    move_type VARCHAR(20) DEFAULT NULL,
     move_category VARCHAR(20) DEFAULT NULL,
     move_power SMALLINT UNSIGNED DEFAULT NULL,
     move_accuracy SMALLINT UNSIGNED DEFAULT NULL,

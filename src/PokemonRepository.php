@@ -75,14 +75,14 @@ final class PokemonRepository
 
 
     /**
-     * @return array<int, array{name:string,machine:string,type:string,number:int,category:string,power:?int,accuracy:?int,pp:?int,max_pp:?int,makes_contact:?bool}>
+     * @return array<int, array{name:string,machine:string,type:string,number:int,move_type:string,category:string,power:?int,accuracy:?int,pp:?int,max_pp:?int,makes_contact:?bool}>
      */
     public function listGameTmHm(string $gameVersion): array
     {
         $normalizedVersion = pkdexNormalizeGameVersion($gameVersion);
 
         $stmt = $this->pdo->prepare(
-            'SELECT move_name, machine_name, move_category, move_power, move_accuracy, move_pp, move_max_pp, makes_contact
+            'SELECT move_name, machine_name, move_type, move_category, move_power, move_accuracy, move_pp, move_max_pp, makes_contact
              FROM game_tmhm
              WHERE game_version = :game_version
              ORDER BY machine_name ASC, move_name ASC'
@@ -103,6 +103,9 @@ final class PokemonRepository
                     'machine' => $machine,
                     'type' => str_starts_with($machine, 'HM') ? 'HM' : 'TM',
                     'number' => $number,
+                    'move_type' => isset($row['move_type']) && $row['move_type'] !== null
+                        ? ucfirst(strtolower((string) $row['move_type']))
+                        : 'Unknown',
                     'category' => isset($row['move_category']) && $row['move_category'] !== null
                         ? ucfirst(strtolower((string) $row['move_category']))
                         : 'Unknown',
@@ -218,12 +221,12 @@ final class PokemonRepository
         );
     }
 
-    /** @return array<string, array<int, array{name:string,method:string,level:int,category:string,power:?int,accuracy:?int,pp:?int,max_pp:?int,makes_contact:?bool}>> */
+    /** @return array<string, array<int, array{name:string,method:string,level:int,move_type:string,category:string,power:?int,accuracy:?int,pp:?int,max_pp:?int,makes_contact:?bool}>> */
     private function movesByPokemonId(int $pokemonId): array
     {
         $stmt = $this->pdo->prepare(
             'SELECT pm.move_name, pm.learn_method, pm.level_learned_at, pm.game_version,
-                    gt.move_category, gt.move_power, gt.move_accuracy, gt.move_pp, gt.move_max_pp, gt.makes_contact
+                    gt.move_type, gt.move_category, gt.move_power, gt.move_accuracy, gt.move_pp, gt.move_max_pp, gt.makes_contact
              FROM pokemon_moves pm
              LEFT JOIN game_tmhm gt
                ON gt.move_name = pm.move_name
@@ -244,6 +247,9 @@ final class PokemonRepository
                 'name' => (string) $row['move_name'],
                 'method' => (string) $row['learn_method'],
                 'level' => (int) $row['level_learned_at'],
+                'move_type' => isset($row['move_type']) && $row['move_type'] !== null
+                    ? ucfirst(strtolower((string) $row['move_type']))
+                    : 'Unknown',
                 'category' => isset($row['move_category']) && $row['move_category'] !== null
                     ? ucfirst(strtolower((string) $row['move_category']))
                     : 'Unknown',

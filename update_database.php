@@ -89,6 +89,7 @@ $gameTmhmStmt = $pdo->prepare(
         move_name,
         machine_name,
         game_version,
+        move_type,
         move_category,
         move_power,
         move_accuracy,
@@ -100,6 +101,7 @@ $gameTmhmStmt = $pdo->prepare(
         :move_name,
         :machine_name,
         :game_version,
+        :move_type,
         :move_category,
         :move_power,
         :move_accuracy,
@@ -109,6 +111,7 @@ $gameTmhmStmt = $pdo->prepare(
     )
      ON DUPLICATE KEY UPDATE
         machine_name = VALUES(machine_name),
+        move_type = VALUES(move_type),
         move_category = VALUES(move_category),
         move_power = VALUES(move_power),
         move_accuracy = VALUES(move_accuracy),
@@ -249,6 +252,7 @@ foreach ($listResponse['results'] as $item) {
             }
 
             $moveData = $moveMachineCache[$moveUrl];
+            $moveType = isset($moveData['type']['name']) ? (string) $moveData['type']['name'] : null;
             $damageClass = isset($moveData['damage_class']['name']) ? (string) $moveData['damage_class']['name'] : null;
             $power = isset($moveData['power']) && is_numeric($moveData['power']) ? (int) $moveData['power'] : null;
             $accuracy = isset($moveData['accuracy']) && is_numeric($moveData['accuracy']) ? (int) $moveData['accuracy'] : null;
@@ -297,6 +301,7 @@ foreach ($listResponse['results'] as $item) {
                     ':move_name' => $moveName,
                     ':machine_name' => $normalizedMachine,
                     ':game_version' => $versionGroup,
+                    ':move_type' => $moveType,
                     ':move_category' => $damageClass,
                     ':move_power' => $power,
                     ':move_accuracy' => $accuracy,
@@ -385,7 +390,8 @@ function ensureEvolutionMethodColumn(PDO $pdo): void
 function ensureGameTmhmMetadataColumns(PDO $pdo): void
 {
     $columnDefinitions = [
-        'move_category' => 'ALTER TABLE game_tmhm ADD COLUMN move_category VARCHAR(20) DEFAULT NULL AFTER game_version',
+        'move_type' => 'ALTER TABLE game_tmhm ADD COLUMN move_type VARCHAR(20) DEFAULT NULL AFTER game_version',
+        'move_category' => 'ALTER TABLE game_tmhm ADD COLUMN move_category VARCHAR(20) DEFAULT NULL AFTER move_type',
         'move_power' => 'ALTER TABLE game_tmhm ADD COLUMN move_power SMALLINT UNSIGNED DEFAULT NULL AFTER move_category',
         'move_accuracy' => 'ALTER TABLE game_tmhm ADD COLUMN move_accuracy SMALLINT UNSIGNED DEFAULT NULL AFTER move_power',
         'move_pp' => 'ALTER TABLE game_tmhm ADD COLUMN move_pp SMALLINT UNSIGNED DEFAULT NULL AFTER move_accuracy',
