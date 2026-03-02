@@ -67,6 +67,9 @@ $statStmt = $pdo->prepare(
      ON DUPLICATE KEY UPDATE base_value = VALUES(base_value)'
 );
 
+
+ensureEvolutionMethodColumn($pdo);
+
 $moveStmt = $pdo->prepare(
     'INSERT INTO pokemon_moves (pokemon_id, move_name, learn_method, level_learned_at, game_version)
      VALUES (:pokemon_id, :move_name, :learn_method, :level_learned_at, :game_version)
@@ -92,12 +95,13 @@ $deleteMovesStmt = $pdo->prepare('DELETE FROM pokemon_moves WHERE pokemon_id = :
 $deleteLocationsStmt = $pdo->prepare('DELETE FROM pokemon_locations WHERE pokemon_id = :pokemon_id');
 $evolutionDeleteStmt = $pdo->prepare('DELETE FROM pokemon_evolutions WHERE evolution_chain_id = :chain_id');
 $evolutionInsertStmt = $pdo->prepare(
-    'INSERT INTO pokemon_evolutions (evolution_chain_id, from_pokemon_id, to_pokemon_id, stage_depth, min_level, trigger_name)
-     VALUES (:evolution_chain_id, :from_pokemon_id, :to_pokemon_id, :stage_depth, :min_level, :trigger_name)
+    'INSERT INTO pokemon_evolutions (evolution_chain_id, from_pokemon_id, to_pokemon_id, stage_depth, min_level, trigger_name, evolution_method)
+     VALUES (:evolution_chain_id, :from_pokemon_id, :to_pokemon_id, :stage_depth, :min_level, :trigger_name, :evolution_method)
      ON DUPLICATE KEY UPDATE
         stage_depth = VALUES(stage_depth),
         min_level = VALUES(min_level),
-        trigger_name = VALUES(trigger_name)'
+        trigger_name = VALUES(trigger_name),
+        evolution_method = VALUES(evolution_method)'
 );
 
 $total = count($listResponse['results']);
@@ -300,6 +304,19 @@ foreach ($listResponse['results'] as $item) {
 
 echo sprintf("Done. %d Pokémon synchronized.\n", $processed);
 
+
+function ensureEvolutionMethodColumn(PDO $pdo): void
+{
+    $stmt = $pdo->query("SHOW COLUMNS FROM pokemon_evolutions LIKE 'evolution_method'");
+    $exists = $stmt !== false ? $stmt->fetch() : false;
+
+    if ($exists !== false) {
+        return;
+    }
+
+    $pdo->exec('ALTER TABLE pokemon_evolutions ADD COLUMN evolution_method VARCHAR(255) DEFAULT NULL AFTER trigger_name');
+}
+
 /**
  * @param array<string, mixed> $chainNode
  */
@@ -337,6 +354,7 @@ function traverseChainNode(
 
     $minLevel = isset($evolutionDetails['min_level']) ? (int) $evolutionDetails['min_level'] : null;
     $triggerName = isset($evolutionDetails['trigger']['name']) ? (string) $evolutionDetails['trigger']['name'] : null;
+    $evolutionMethod = formatEvolutionMethod($evolutionDetails);
 
     $insertStmt->execute([
         ':evolution_chain_id' => $chainId,
@@ -345,6 +363,7 @@ function traverseChainNode(
         ':stage_depth' => $depth,
         ':min_level' => $minLevel,
         ':trigger_name' => $triggerName,
+        ':evolution_method' => $evolutionMethod,
     ]);
 
     foreach (($node['evolves_to'] ?? []) as $nextNode) {
@@ -354,6 +373,98 @@ function traverseChainNode(
         traverseChainNode($chainId, $nextNode, $toPokemonId, $depth + 1, $insertStmt);
     }
 }
+
+
+/**
+ * @param array<string, mixed> $details
+ */
+function formatEvolutionMethod(array $details): ?string
+{
+    if ($details === []) {
+        return null;
+    }
+
+    $parts = [];
+
+    if (isset($details['trigger']['name']) && is_string($details['trigger']['name'])) {
+        $trigger = (string) $details['trigger']['name'];
+        if ($trigger === 'level-up') {
+            $parts[] = 'Level Up';
+        } elseif ($trigger !== '') {
+            $parts[] = ucwords(str_replace('-', ' ', $trigger));
+        }
+    }
+
+    if (isset($details['min_level']) && is_numeric($details['min_level'])) {
+        $parts[] = 'Level ' . (int) $details['min_level'];
+    }
+
+    if (isset($details['item']['name']) && is_string($details['item']['name']) && $details['item']['name'] !== '') {
+        $parts[] = 'Use ' . ucwords(str_replace('-', ' ', (string) $details['item']['name']));
+    }
+
+    if (isset($details['held_item']['name']) && is_string($details['held_item']['name']) && $details['held_item']['name'] !== '') {
+        $parts[] = 'Hold ' . ucwords(str_replace('-', ' ', (string) $details['held_item']['name']));
+    }
+
+    if (!empty($details['time_of_day']) && is_string($details['time_of_day'])) {
+        $parts[] = 'Time: ' . ucwords($details['time_of_day']);
+    }
+
+    if (isset($details['min_happiness']) && is_numeric($details['min_happiness'])) {
+        $parts[] = 'Happiness ' . (int) $details['min_happiness'] . '+';
+    }
+
+    if (isset($details['location']['name']) && is_string($details['location']['name']) && $details['location']['name'] !== '') {
+        $parts[] = 'At ' . ucwords(str_replace('-', ' ', (string) $details['location']['name']));
+    }
+
+    if (isset($details['known_move_type']['name']) && is_string($details['known_move_type']['name']) && $details['known_move_type']['name'] !== '') {
+        $parts[] = 'Know ' . ucwords(str_replace('-', ' ', (string) $details['known_move_type']['name'])) . ' move';
+    }
+
+    if (isset($details['known_move']['name']) && is_string($details['known_move']['name']) && $details['known_move']['name'] !== '') {
+        $parts[] = 'Know ' . ucwords(str_replace('-', ' ', (string) $details['known_move']['name']));
+    }
+
+    if (isset($details['needs_overworld_rain']) && $details['needs_overworld_rain'] === true) {
+        $parts[] = 'During rain';
+    }
+
+    if (isset($details['party_species']['name']) && is_string($details['party_species']['name']) && $details['party_species']['name'] !== '') {
+        $parts[] = 'Party has ' . ucwords(str_replace('-', ' ', (string) $details['party_species']['name']));
+    }
+
+    if (isset($details['party_type']['name']) && is_string($details['party_type']['name']) && $details['party_type']['name'] !== '') {
+        $parts[] = 'Party has ' . ucwords(str_replace('-', ' ', (string) $details['party_type']['name'])) . ' type';
+    }
+
+    if (isset($details['relative_physical_stats']) && is_numeric($details['relative_physical_stats'])) {
+        $statRule = (int) $details['relative_physical_stats'];
+        if ($statRule > 0) {
+            $parts[] = 'Atk > Def';
+        } elseif ($statRule < 0) {
+            $parts[] = 'Atk < Def';
+        } else {
+            $parts[] = 'Atk = Def';
+        }
+    }
+
+    if (isset($details['gender']) && is_numeric($details['gender'])) {
+        $parts[] = (int) $details['gender'] === 1 ? 'Female' : 'Male';
+    }
+
+    if (isset($details['turn_upside_down']) && $details['turn_upside_down'] === true) {
+        $parts[] = 'Turn device upside down';
+    }
+
+    if ($parts === []) {
+        return null;
+    }
+
+    return implode(', ', array_values(array_unique($parts)));
+}
+
 
 function extractIdFromUrl(string $url): ?int
 {

@@ -321,7 +321,7 @@ final class PokemonRepository
         }
 
         $chainStmt = $this->pdo->prepare(
-            'SELECT e.from_pokemon_id, e.to_pokemon_id, e.stage_depth, e.min_level, e.trigger_name,
+            'SELECT e.from_pokemon_id, e.to_pokemon_id, e.stage_depth, e.min_level, e.trigger_name, e.evolution_method,
                     p.name, p.sprite_url
              FROM pokemon_evolutions e
              INNER JOIN pokemon p ON p.pokemon_id = e.to_pokemon_id

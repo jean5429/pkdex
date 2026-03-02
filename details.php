@@ -202,6 +202,37 @@ $artworkBaseUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/spri
 $officialArtworkUrl = $artworkBaseUrl . ($pokemon !== null ? (int) $pokemon['pokemon_id'] : 0) . '.png';
 $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (int) $pokemon['pokemon_id'] : 0) . '.png';
 
+
+$evolutionStages = [];
+$evolutionRoot = null;
+if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
+    foreach ($pokemon['evolution_chain'] as $stage) {
+        $depth = (int) ($stage['stage_depth'] ?? 0);
+        $toPokemonId = (int) ($stage['to_pokemon_id'] ?? 0);
+        if ($toPokemonId <= 0) {
+            continue;
+        }
+
+        if (!isset($evolutionStages[$depth])) {
+            $evolutionStages[$depth] = [];
+        }
+
+        $evolutionStages[$depth][$toPokemonId] = [
+            'to_pokemon_id' => $toPokemonId,
+            'name' => (string) ($stage['name'] ?? ''),
+            'sprite_url' => (string) ($stage['sprite_url'] ?? ''),
+            'evolution_method' => $stage['evolution_method'] ?? null,
+            'min_level' => $stage['min_level'] ?? null,
+        ];
+
+        if ($depth === 0 && $evolutionRoot === null) {
+            $evolutionRoot = $toPokemonId;
+        }
+    }
+
+    ksort($evolutionStages);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -339,20 +370,42 @@ $officialArtworkShinyUrl = $artworkBaseUrl . 'shiny/' . ($pokemon !== null ? (in
                 <?php if ($pokemon['evolution_chain'] === []): ?>
                     <p class="mt-6 text-center text-xl text-slate-600">No evolution chain in database yet. Run <code>php update_database.php</code> to sync species and evolution data.</p>
                 <?php else: ?>
-                    <div class="mt-6 space-y-5 text-center">
-                        <?php foreach ($pokemon['evolution_chain'] as $index => $stage): ?>
-                            <div>
-                                <a href="details.php?id=<?= (int) $stage['to_pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="inline-block transition hover:scale-105" title="View <?= htmlspecialchars($formatLabel((string) $stage['name'])) ?> details">
-                                    <img src="<?= htmlspecialchars((string) $stage['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $stage['name']) ?>" class="mx-auto h-20 w-20 md:h-24 md:w-24">
-                                    <p class="text-lg capitalize md:text-2xl <?= (int) $stage['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-bold text-emerald-600' : 'font-medium text-slate-700 hover:text-blue-600' ?>"><?= htmlspecialchars((string) $stage['name']) ?></p>
+                    <div class="mt-6 text-center">
+                        <?php if ($evolutionRoot !== null && isset($evolutionStages[0][$evolutionRoot])): ?>
+                            <?php $root = $evolutionStages[0][$evolutionRoot]; ?>
+                            <div class="mx-auto mb-4 w-fit">
+                                <a href="details.php?id=<?= (int) $root['to_pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="inline-block transition hover:scale-105" title="View <?= htmlspecialchars($formatLabel((string) $root['name'])) ?> details">
+                                    <img src="<?= htmlspecialchars((string) $root['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $root['name']) ?>" class="mx-auto h-20 w-20 md:h-24 md:w-24">
+                                    <p class="text-lg capitalize md:text-2xl <?= (int) $root['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-bold text-emerald-600' : 'font-medium text-slate-700 hover:text-blue-600' ?>"><?= htmlspecialchars((string) $root['name']) ?></p>
                                 </a>
-                                <?php if ($stage['min_level'] !== null): ?>
-                                    <p class="text-lg text-slate-500">(Lv. <?= (int) $stage['min_level'] ?>)</p>
-                                <?php endif; ?>
                             </div>
-                            <?php if ($index < count($pokemon['evolution_chain']) - 1): ?>
-                                <p class="text-3xl text-slate-400">↓</p>
+                        <?php endif; ?>
+
+                        <?php foreach ($evolutionStages as $depth => $stageGroup): ?>
+                            <?php if ((int) $depth === 0): ?>
+                                <?php continue; ?>
                             <?php endif; ?>
+
+                            <p class="mb-3 text-3xl text-slate-400">↓</p>
+                            <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                                <?php foreach ($stageGroup as $stage): ?>
+                                    <?php
+                                    $method = trim((string) ($stage['evolution_method'] ?? ''));
+                                    if ($method === '' && $stage['min_level'] !== null) {
+                                        $method = 'Level ' . (int) $stage['min_level'];
+                                    }
+                                    ?>
+                                    <div>
+                                        <a href="details.php?id=<?= (int) $stage['to_pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="inline-block transition hover:scale-105" title="View <?= htmlspecialchars($formatLabel((string) $stage['name'])) ?> details">
+                                            <img src="<?= htmlspecialchars((string) $stage['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $stage['name']) ?>" class="mx-auto h-16 w-16 md:h-20 md:w-20">
+                                            <p class="text-base capitalize md:text-xl <?= (int) $stage['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-bold text-emerald-600' : 'font-medium text-slate-700 hover:text-blue-600' ?>"><?= htmlspecialchars((string) $stage['name']) ?></p>
+                                        </a>
+                                        <?php if ($method !== ''): ?>
+                                            <p class="mt-1 text-sm text-slate-500"><?= htmlspecialchars($method) ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
