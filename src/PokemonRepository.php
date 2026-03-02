@@ -226,11 +226,19 @@ final class PokemonRepository
     {
         $stmt = $this->pdo->prepare(
             'SELECT pm.move_name, pm.learn_method, pm.level_learned_at, pm.game_version,
-                    gt.move_type, gt.move_category, gt.move_power, gt.move_accuracy, gt.move_pp, gt.move_max_pp, gt.makes_contact
+                    COALESCE(gt.move_type, mm.move_type) AS move_type,
+                    COALESCE(gt.move_category, mm.move_category) AS move_category,
+                    COALESCE(gt.move_power, mm.move_power) AS move_power,
+                    COALESCE(gt.move_accuracy, mm.move_accuracy) AS move_accuracy,
+                    COALESCE(gt.move_pp, mm.move_pp) AS move_pp,
+                    COALESCE(gt.move_max_pp, mm.move_max_pp) AS move_max_pp,
+                    COALESCE(gt.makes_contact, mm.makes_contact) AS makes_contact
              FROM pokemon_moves pm
              LEFT JOIN game_tmhm gt
                ON gt.move_name = pm.move_name
               AND gt.game_version = pm.game_version
+             LEFT JOIN move_metadata mm
+               ON mm.move_name = pm.move_name
              WHERE pm.pokemon_id = :pokemonId
              ORDER BY pm.game_version ASC, pm.level_learned_at ASC, pm.move_name ASC'
         );
