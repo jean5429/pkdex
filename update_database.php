@@ -219,6 +219,31 @@ foreach ($listResponse['results'] as $item) {
                 continue;
             }
 
+            foreach (($move['version_group_details'] ?? []) as $versionDetail) {
+                if (!is_array($versionDetail)) {
+                    continue;
+                }
+
+                $learnMethod = isset($versionDetail['move_learn_method']['name'])
+                    ? (string) $versionDetail['move_learn_method']['name']
+                    : '';
+                $gameVersion = isset($versionDetail['version_group']['name'])
+                    ? (string) $versionDetail['version_group']['name']
+                    : '';
+
+                if ($learnMethod === '' || $gameVersion === '') {
+                    continue;
+                }
+
+                $moveStmt->execute([
+                    ':pokemon_id' => $pokemonId,
+                    ':move_name' => $moveName,
+                    ':learn_method' => $learnMethod,
+                    ':level_learned_at' => (int) ($versionDetail['level_learned_at'] ?? 0),
+                    ':game_version' => $gameVersion,
+                ]);
+            }
+
             if (!isset($moveMachineCache[$moveUrl])) {
                 $moveMachineCache[$moveUrl] = apiGet($moveUrl);
             }
