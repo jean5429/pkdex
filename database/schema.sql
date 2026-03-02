@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS pokemon_evolutions (
     stage_depth TINYINT UNSIGNED NOT NULL DEFAULT 0,
     min_level SMALLINT UNSIGNED DEFAULT NULL,
     trigger_name VARCHAR(50) DEFAULT NULL,
+    evolution_method VARCHAR(255) DEFAULT NULL,
     UNIQUE KEY unique_evolution_link (evolution_chain_id, from_pokemon_id, to_pokemon_id),
     KEY idx_chain_depth (evolution_chain_id, stage_depth),
     CONSTRAINT fk_evolution_from FOREIGN KEY (from_pokemon_id) REFERENCES pokemon (pokemon_id) ON DELETE CASCADE,
