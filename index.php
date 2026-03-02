@@ -215,7 +215,7 @@ foreach ($availableVersions as $versionKey) {
                 <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM data found for this game version.</p>
             <?php else: ?>
                 <section class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div class="grid min-w-[1060px] grid-cols-[90px_90px_160px_190px_130px_90px_90px_140px_130px] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">
+                    <div class="grid min-w-[980px] grid-cols-[80px_80px_130px_170px_120px_80px_90px_120px_90px] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">
                         <p>Machine</p>
                         <p>Number</p>
                         <p>Move type</p>
@@ -228,7 +228,7 @@ foreach ($availableVersions as $versionKey) {
                     </div>
                     <ul id="tmhm-grid" class="divide-y divide-slate-100">
                         <?php foreach ($gameTmhm as $entry): ?>
-                            <li class="tmhm-card grid min-w-[1060px] grid-cols-[90px_90px_160px_190px_130px_90px_90px_140px_130px] gap-2 px-3 py-2 text-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>" data-machine-number="<?= (int) $entry['number'] ?>" data-machine-name="<?= htmlspecialchars(strtolower((string) pkdexFormatGameVersionLabel((string) $entry['name']))) ?>">
+                            <li class="tmhm-card grid min-w-[980px] grid-cols-[80px_80px_130px_170px_120px_80px_90px_120px_90px] gap-2 px-3 py-2 text-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>" data-machine-number="<?= (int) $entry['number'] ?>" data-machine-name="<?= htmlspecialchars(strtolower((string) pkdexFormatGameVersionLabel((string) $entry['name']))) ?>">
                                 <p class="font-semibold text-slate-700"><?= htmlspecialchars((string) $entry['type']) ?></p>
                                 <p class="font-mono text-slate-600"><?= (int) $entry['number'] ?></p>
                                 <?php $moveTypeKey = strtolower((string) ($entry['move_type'] ?? '')); ?>
@@ -238,7 +238,7 @@ foreach ($availableVersions as $versionKey) {
                                 <p class="text-slate-700"><?= $entry['power'] !== null ? (int) $entry['power'] : '—' ?></p>
                                 <p class="text-slate-700"><?= $entry['accuracy'] !== null ? (int) $entry['accuracy'] : '—' ?></p>
                                 <p class="text-slate-700"><?= $entry['pp'] !== null ? ((int) $entry['pp']) . ' / ' . ((int) ($entry['max_pp'] ?? $entry['pp'])) : '—' ?></p>
-                                <p class="text-slate-700"><?php if ($entry['makes_contact'] === null): ?>—<?php else: ?><?= $entry['makes_contact'] ? 'Yes' : 'No' ?><?php endif; ?></p>
+                                <p class="text-slate-700"><?php if ($entry['makes_contact'] === null): ?>No data<?php else: ?><?= $entry['makes_contact'] ? 'Yes' : 'No' ?><?php endif; ?></p>
                             </li>
                         <?php endforeach; ?>
                     </ul>
