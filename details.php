@@ -36,6 +36,11 @@ $selectedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '
 $selectedMethod = isset($_GET['method']) ? trim((string) $_GET['method']) : 'level-up';
 $availableMethods = ['level-up', 'machine'];
 $allowedVersions = pkdexGameVersions();
+$machineMethodAliases = ['machine', 'machine-tm', 'machine-hm', 'tm', 'hm'];
+
+if (in_array($selectedMethod, $machineMethodAliases, true)) {
+    $selectedMethod = 'machine';
+}
 
 if (!in_array($selectedMethod, $availableMethods, true)) {
     $selectedMethod = 'level-up';
@@ -63,8 +68,13 @@ if ($selectedVersion !== '' && isset($pokemon['moves'][$selectedVersion])) {
     ];
 
     foreach ($pokemon['moves'][$selectedVersion] as $move) {
-        $method = (string) $move['method'];
-        if (!isset($movesByMethod[$method])) {
+        $method = strtolower((string) $move['method']);
+
+        if ($method === 'machine' || $method === 'machine-tm' || $method === 'machine-hm' || $method === 'tm' || $method === 'hm') {
+            $method = 'machine';
+        }
+
+        if ($method !== 'level-up' && $method !== 'machine') {
             continue;
         }
 
@@ -371,9 +381,10 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                     <p class="mt-6 text-center text-xl text-slate-600">No evolution chain in database yet. Run <code>php update_database.php</code> to sync species and evolution data.</p>
                 <?php else: ?>
                     <div class="mt-6 text-center">
+                        <div class="mx-auto w-full max-w-xs md:max-w-sm">
                         <?php if ($evolutionRoot !== null && isset($evolutionStages[0][$evolutionRoot])): ?>
                             <?php $root = $evolutionStages[0][$evolutionRoot]; ?>
-                            <div class="mx-auto mb-4 w-fit">
+                            <div class="mx-auto mb-4 w-fit text-center">
                                 <a href="details.php?id=<?= (int) $root['to_pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="inline-block transition hover:scale-105" title="View <?= htmlspecialchars($formatLabel((string) $root['name'])) ?> details">
                                     <img src="<?= htmlspecialchars((string) $root['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $root['name']) ?>" class="mx-auto h-20 w-20 md:h-24 md:w-24">
                                     <p class="text-lg capitalize md:text-2xl <?= (int) $root['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-bold text-emerald-600' : 'font-medium text-slate-700 hover:text-blue-600' ?>"><?= htmlspecialchars((string) $root['name']) ?></p>
@@ -387,7 +398,7 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                             <?php endif; ?>
 
                             <p class="mb-3 text-3xl text-slate-400">↓</p>
-                            <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                            <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <?php foreach ($stageGroup as $stage): ?>
                                     <?php
                                     $method = trim((string) ($stage['evolution_method'] ?? ''));
@@ -395,7 +406,7 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                                         $method = 'Level ' . (int) $stage['min_level'];
                                     }
                                     ?>
-                                    <div>
+                                    <div class="text-center">
                                         <a href="details.php?id=<?= (int) $stage['to_pokemon_id'] ?>&version=<?= urlencode($selectedVersion) ?>" class="inline-block transition hover:scale-105" title="View <?= htmlspecialchars($formatLabel((string) $stage['name'])) ?> details">
                                             <img src="<?= htmlspecialchars((string) $stage['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $stage['name']) ?>" class="mx-auto h-16 w-16 md:h-20 md:w-20">
                                             <p class="text-base capitalize md:text-xl <?= (int) $stage['to_pokemon_id'] === (int) $pokemon['pokemon_id'] ? 'font-bold text-emerald-600' : 'font-medium text-slate-700 hover:text-blue-600' ?>"><?= htmlspecialchars((string) $stage['name']) ?></p>
@@ -407,6 +418,7 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                                 <?php endforeach; ?>
                             </div>
                         <?php endforeach; ?>
+                        </div>
                     </div>
                 <?php endif; ?>
             </article>
