@@ -24,7 +24,7 @@ $pdo->exec($schemaSql);
 // $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS male_percentage DECIMAL(5,2) DEFAULT NULL');
 // $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS female_percentage DECIMAL(5,2) DEFAULT NULL');
 // $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS egg_groups VARCHAR(255) DEFAULT NULL');
-// $pdo->exec('CREATE TABLE IF NOT EXISTS game_tmhm (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, move_name VARCHAR(100) NOT NULL, machine_name VARCHAR(100) NOT NULL, game_version VARCHAR(80) NOT NULL, UNIQUE KEY unique_tmhm_per_version (move_name, machine_name, game_version))');
+// $pdo->exec('CREATE TABLE IF NOT EXISTS game_tmhm (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, move_name VARCHAR(100) NOT NULL, machine_name VARCHAR(100) NOT NULL, game_version VARCHAR(80) NOT NULL, move_category VARCHAR(20) DEFAULT NULL, move_power SMALLINT UNSIGNED DEFAULT NULL, move_accuracy SMALLINT UNSIGNED DEFAULT NULL, move_pp SMALLINT UNSIGNED DEFAULT NULL, move_max_pp SMALLINT UNSIGNED DEFAULT NULL, makes_contact TINYINT(1) DEFAULT NULL, UNIQUE KEY unique_tmhm_per_version (move_name, machine_name, game_version))');
 
 $baseUrl = rtrim((string) $config['pokeapi']['base_url'], '/');
 $limit = (int) $config['pokeapi']['limit'];
@@ -69,6 +69,7 @@ $statStmt = $pdo->prepare(
 
 
 ensureEvolutionMethodColumn($pdo);
+ensureGameTmhmMetadataColumns($pdo);
 
 $moveStmt = $pdo->prepare(
     'INSERT INTO pokemon_moves (pokemon_id, move_name, learn_method, level_learned_at, game_version)
@@ -84,9 +85,36 @@ $locationStmt = $pdo->prepare(
 );
 
 $gameTmhmStmt = $pdo->prepare(
-    'INSERT INTO game_tmhm (move_name, machine_name, game_version)
-     VALUES (:move_name, :machine_name, :game_version)
-     ON DUPLICATE KEY UPDATE machine_name = VALUES(machine_name)'
+    'INSERT INTO game_tmhm (
+        move_name,
+        machine_name,
+        game_version,
+        move_category,
+        move_power,
+        move_accuracy,
+        move_pp,
+        move_max_pp,
+        makes_contact
+    )
+     VALUES (
+        :move_name,
+        :machine_name,
+        :game_version,
+        :move_category,
+        :move_power,
+        :move_accuracy,
+        :move_pp,
+        :move_max_pp,
+        :makes_contact
+    )
+     ON DUPLICATE KEY UPDATE
+        machine_name = VALUES(machine_name),
+        move_category = VALUES(move_category),
+        move_power = VALUES(move_power),
+        move_accuracy = VALUES(move_accuracy),
+        move_pp = VALUES(move_pp),
+        move_max_pp = VALUES(move_max_pp),
+        makes_contact = VALUES(makes_contact)'
 );
 
 $deleteTypesStmt = $pdo->prepare('DELETE FROM pokemon_types WHERE pokemon_id = :pokemon_id');
@@ -185,20 +213,6 @@ foreach ($listResponse['results'] as $item) {
 
         $deleteMovesStmt->execute([':pokemon_id' => $pokemonId]);
         foreach (($pokemonData['moves'] ?? []) as $move) {
-            $moveName = (string) ($move['move']['name'] ?? 'unknown');
-            foreach (($move['version_group_details'] ?? []) as $detail) {
-                $moveStmt->execute([
-                    ':pokemon_id' => $pokemonId,
-                    ':move_name' => $moveName,
-                    ':learn_method' => (string) ($detail['move_learn_method']['name'] ?? 'unknown'),
-                    ':level_learned_at' => (int) ($detail['level_learned_at'] ?? 0),
-                    ':game_version' => (string) ($detail['version_group']['name'] ?? 'unknown'),
-                ]);
-            }
-        }
-
-
-        foreach (($pokemonData['moves'] ?? []) as $move) {
             $moveName = (string) ($move['move']['name'] ?? '');
             $moveUrl = (string) ($move['move']['url'] ?? '');
             if ($moveName === '' || $moveUrl === '') {
@@ -207,39 +221,64 @@ foreach ($listResponse['results'] as $item) {
 
             if (!isset($moveMachineCache[$moveUrl])) {
                 $moveMachineCache[$moveUrl] = apiGet($moveUrl);
-                $moveData = $moveMachineCache[$moveUrl];
+            }
 
-                foreach (($moveData['machines'] ?? []) as $machineData) {
-                    if (!is_array($machineData)) {
-                        continue;
+            $moveData = $moveMachineCache[$moveUrl];
+            $damageClass = isset($moveData['damage_class']['name']) ? (string) $moveData['damage_class']['name'] : null;
+            $power = isset($moveData['power']) && is_numeric($moveData['power']) ? (int) $moveData['power'] : null;
+            $accuracy = isset($moveData['accuracy']) && is_numeric($moveData['accuracy']) ? (int) $moveData['accuracy'] : null;
+            $pp = isset($moveData['pp']) && is_numeric($moveData['pp']) ? (int) $moveData['pp'] : null;
+            $maxPp = $pp !== null ? (int) floor($pp * 8 / 5) : null;
+            $makesContact = null;
+            if (isset($moveData['flags']) && is_array($moveData['flags'])) {
+                foreach ($moveData['flags'] as $flag) {
+                    if (isset($flag['name']) && (string) $flag['name'] === 'contact') {
+                        $makesContact = true;
+                        break;
                     }
-
-                    $machineUrl = isset($machineData['machine']['url']) ? (string) $machineData['machine']['url'] : '';
-                    $versionGroup = isset($machineData['version_group']['name']) ? (string) $machineData['version_group']['name'] : '';
-
-                    if ($machineUrl === '' || $versionGroup === '') {
-                        continue;
-                    }
-
-                    if (!isset($machineItemCache[$machineUrl])) {
-                        $machineItemCache[$machineUrl] = apiGet($machineUrl);
-                    }
-
-                    $machineDetails = $machineItemCache[$machineUrl];
-                    $machineName = isset($machineDetails['item']['name']) ? (string) $machineDetails['item']['name'] : '';
-
-                    if ($machineName === '' || !preg_match('/^(tm|hm)-?\d+/i', $machineName)) {
-                        continue;
-                    }
-
-                    $normalizedMachine = strtoupper(str_replace('-', '', $machineName));
-
-                    $gameTmhmStmt->execute([
-                        ':move_name' => $moveName,
-                        ':machine_name' => $normalizedMachine,
-                        ':game_version' => $versionGroup,
-                    ]);
                 }
+
+                if ($makesContact === null) {
+                    $makesContact = false;
+                }
+            }
+
+            foreach (($moveData['machines'] ?? []) as $machineData) {
+                if (!is_array($machineData)) {
+                    continue;
+                }
+
+                $machineUrl = isset($machineData['machine']['url']) ? (string) $machineData['machine']['url'] : '';
+                $versionGroup = isset($machineData['version_group']['name']) ? (string) $machineData['version_group']['name'] : '';
+
+                if ($machineUrl === '' || $versionGroup === '') {
+                    continue;
+                }
+
+                if (!isset($machineItemCache[$machineUrl])) {
+                    $machineItemCache[$machineUrl] = apiGet($machineUrl);
+                }
+
+                $machineDetails = $machineItemCache[$machineUrl];
+                $machineName = isset($machineDetails['item']['name']) ? (string) $machineDetails['item']['name'] : '';
+
+                if ($machineName === '' || !preg_match('/^(tm|hm)-?\d+/i', $machineName)) {
+                    continue;
+                }
+
+                $normalizedMachine = strtoupper(str_replace('-', '', $machineName));
+
+                $gameTmhmStmt->execute([
+                    ':move_name' => $moveName,
+                    ':machine_name' => $normalizedMachine,
+                    ':game_version' => $versionGroup,
+                    ':move_category' => $damageClass,
+                    ':move_power' => $power,
+                    ':move_accuracy' => $accuracy,
+                    ':move_pp' => $pp,
+                    ':move_max_pp' => $maxPp,
+                    ':makes_contact' => $makesContact,
+                ]);
             }
         }
 
@@ -317,6 +356,27 @@ function ensureEvolutionMethodColumn(PDO $pdo): void
     $pdo->exec('ALTER TABLE pokemon_evolutions ADD COLUMN evolution_method VARCHAR(255) DEFAULT NULL AFTER trigger_name');
 }
 
+
+function ensureGameTmhmMetadataColumns(PDO $pdo): void
+{
+    $columnDefinitions = [
+        'move_category' => 'ALTER TABLE game_tmhm ADD COLUMN move_category VARCHAR(20) DEFAULT NULL AFTER game_version',
+        'move_power' => 'ALTER TABLE game_tmhm ADD COLUMN move_power SMALLINT UNSIGNED DEFAULT NULL AFTER move_category',
+        'move_accuracy' => 'ALTER TABLE game_tmhm ADD COLUMN move_accuracy SMALLINT UNSIGNED DEFAULT NULL AFTER move_power',
+        'move_pp' => 'ALTER TABLE game_tmhm ADD COLUMN move_pp SMALLINT UNSIGNED DEFAULT NULL AFTER move_accuracy',
+        'move_max_pp' => 'ALTER TABLE game_tmhm ADD COLUMN move_max_pp SMALLINT UNSIGNED DEFAULT NULL AFTER move_pp',
+        'makes_contact' => 'ALTER TABLE game_tmhm ADD COLUMN makes_contact TINYINT(1) DEFAULT NULL AFTER move_max_pp',
+    ];
+
+    foreach ($columnDefinitions as $column => $sql) {
+        $stmt = $pdo->query(sprintf("SHOW COLUMNS FROM game_tmhm LIKE '%s'", $column));
+        $exists = $stmt !== false ? $stmt->fetch() : false;
+
+        if ($exists === false) {
+            $pdo->exec($sql);
+        }
+    }
+}
 /**
  * @param array<string, mixed> $chainNode
  */

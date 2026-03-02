@@ -75,14 +75,14 @@ final class PokemonRepository
 
 
     /**
-     * @return array<int, array{name:string,machine:string,type:string,number:int}>
+     * @return array<int, array{name:string,machine:string,type:string,number:int,category:string,power:?int,accuracy:?int,pp:?int,max_pp:?int,makes_contact:?bool}>
      */
     public function listGameTmHm(string $gameVersion): array
     {
         $normalizedVersion = pkdexNormalizeGameVersion($gameVersion);
 
         $stmt = $this->pdo->prepare(
-            'SELECT move_name, machine_name
+            'SELECT move_name, machine_name, move_category, move_power, move_accuracy, move_pp, move_max_pp, makes_contact
              FROM game_tmhm
              WHERE game_version = :game_version
              ORDER BY machine_name ASC, move_name ASC'
@@ -103,6 +103,16 @@ final class PokemonRepository
                     'machine' => $machine,
                     'type' => str_starts_with($machine, 'HM') ? 'HM' : 'TM',
                     'number' => $number,
+                    'category' => isset($row['move_category']) && $row['move_category'] !== null
+                        ? ucfirst(strtolower((string) $row['move_category']))
+                        : 'Unknown',
+                    'power' => isset($row['move_power']) && $row['move_power'] !== null ? (int) $row['move_power'] : null,
+                    'accuracy' => isset($row['move_accuracy']) && $row['move_accuracy'] !== null ? (int) $row['move_accuracy'] : null,
+                    'pp' => isset($row['move_pp']) && $row['move_pp'] !== null ? (int) $row['move_pp'] : null,
+                    'max_pp' => isset($row['move_max_pp']) && $row['move_max_pp'] !== null ? (int) $row['move_max_pp'] : null,
+                    'makes_contact' => isset($row['makes_contact']) && $row['makes_contact'] !== null
+                        ? (bool) $row['makes_contact']
+                        : null,
                 ];
             },
             $rows
@@ -208,14 +218,18 @@ final class PokemonRepository
         );
     }
 
-    /** @return array<string, array<int, array{name:string,method:string,level:int}>> */
+    /** @return array<string, array<int, array{name:string,method:string,level:int,category:string,power:?int,accuracy:?int,pp:?int,max_pp:?int,makes_contact:?bool}>> */
     private function movesByPokemonId(int $pokemonId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT move_name, learn_method, level_learned_at, game_version
-             FROM pokemon_moves
-             WHERE pokemon_id = :pokemonId
-             ORDER BY game_version ASC, level_learned_at ASC, move_name ASC'
+            'SELECT pm.move_name, pm.learn_method, pm.level_learned_at, pm.game_version,
+                    gt.move_category, gt.move_power, gt.move_accuracy, gt.move_pp, gt.move_max_pp, gt.makes_contact
+             FROM pokemon_moves pm
+             LEFT JOIN game_tmhm gt
+               ON gt.move_name = pm.move_name
+              AND gt.game_version = pm.game_version
+             WHERE pm.pokemon_id = :pokemonId
+             ORDER BY pm.game_version ASC, pm.level_learned_at ASC, pm.move_name ASC'
         );
         $stmt->bindValue(':pokemonId', $pokemonId, PDO::PARAM_INT);
         $stmt->execute();
@@ -230,6 +244,16 @@ final class PokemonRepository
                 'name' => (string) $row['move_name'],
                 'method' => (string) $row['learn_method'],
                 'level' => (int) $row['level_learned_at'],
+                'category' => isset($row['move_category']) && $row['move_category'] !== null
+                    ? ucfirst(strtolower((string) $row['move_category']))
+                    : 'Unknown',
+                'power' => isset($row['move_power']) && $row['move_power'] !== null ? (int) $row['move_power'] : null,
+                'accuracy' => isset($row['move_accuracy']) && $row['move_accuracy'] !== null ? (int) $row['move_accuracy'] : null,
+                'pp' => isset($row['move_pp']) && $row['move_pp'] !== null ? (int) $row['move_pp'] : null,
+                'max_pp' => isset($row['move_max_pp']) && $row['move_max_pp'] !== null ? (int) $row['move_max_pp'] : null,
+                'makes_contact' => isset($row['makes_contact']) && $row['makes_contact'] !== null
+                    ? (bool) $row['makes_contact']
+                    : null,
             ];
         }
 
