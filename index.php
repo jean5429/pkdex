@@ -187,18 +187,28 @@ foreach ($availableVersions as $versionKey) {
             <?php if ($gameTmhm === []): ?>
                 <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM data found for this game version.</p>
             <?php else: ?>
-                <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div class="grid grid-cols-3 gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">
+                <section class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="grid min-w-[980px] grid-cols-[80px_90px_190px_130px_90px_90px_140px_130px] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">
                         <p>Type</p>
                         <p>Number</p>
                         <p>Name</p>
+                        <p>Category</p>
+                        <p>Power</p>
+                        <p>Accuracy</p>
+                        <p>PP (max)</p>
+                        <p>Contact</p>
                     </div>
                     <ul id="tmhm-grid" class="divide-y divide-slate-100">
                         <?php foreach ($gameTmhm as $entry): ?>
-                            <li class="tmhm-card grid grid-cols-3 gap-2 px-3 py-2 text-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>" data-machine-number="<?= (int) $entry['number'] ?>" data-machine-name="<?= htmlspecialchars(strtolower((string) pkdexFormatGameVersionLabel((string) $entry['name']))) ?>">
+                            <li class="tmhm-card grid min-w-[980px] grid-cols-[80px_90px_190px_130px_90px_90px_140px_130px] gap-2 px-3 py-2 text-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>" data-machine-number="<?= (int) $entry['number'] ?>" data-machine-name="<?= htmlspecialchars(strtolower((string) pkdexFormatGameVersionLabel((string) $entry['name']))) ?>">
                                 <p class="font-semibold text-slate-700"><?= htmlspecialchars((string) $entry['type']) ?></p>
                                 <p class="font-mono text-slate-600"><?= (int) $entry['number'] ?></p>
                                 <p class="font-semibold capitalize text-slate-900"><?= htmlspecialchars(pkdexFormatGameVersionLabel((string) $entry['name'])) ?></p>
+                                <p class="text-slate-700"><?= htmlspecialchars((string) $entry['category']) ?></p>
+                                <p class="text-slate-700"><?= $entry['power'] !== null ? (int) $entry['power'] : '—' ?></p>
+                                <p class="text-slate-700"><?= $entry['accuracy'] !== null ? (int) $entry['accuracy'] : '—' ?></p>
+                                <p class="text-slate-700"><?= $entry['pp'] !== null ? ((int) $entry['pp']) . ' / ' . ((int) ($entry['max_pp'] ?? $entry['pp'])) : '—' ?></p>
+                                <p class="text-slate-700"><?php if ($entry['makes_contact'] === null): ?>—<?php else: ?><?= $entry['makes_contact'] ? 'Yes' : 'No' ?><?php endif; ?></p>
                             </li>
                         <?php endforeach; ?>
                     </ul>

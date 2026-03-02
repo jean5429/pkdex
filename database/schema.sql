@@ -74,6 +74,12 @@ CREATE TABLE IF NOT EXISTS game_tmhm (
     move_name VARCHAR(100) NOT NULL,
     machine_name VARCHAR(100) NOT NULL,
     game_version VARCHAR(80) NOT NULL,
+    move_category VARCHAR(20) DEFAULT NULL,
+    move_power SMALLINT UNSIGNED DEFAULT NULL,
+    move_accuracy SMALLINT UNSIGNED DEFAULT NULL,
+    move_pp SMALLINT UNSIGNED DEFAULT NULL,
+    move_max_pp SMALLINT UNSIGNED DEFAULT NULL,
+    makes_contact TINYINT(1) DEFAULT NULL,
     UNIQUE KEY unique_tmhm_per_version (move_name, machine_name, game_version)
 );
 

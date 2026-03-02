@@ -436,23 +436,33 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                 </form>
 
                 <div class="mt-4 overflow-x-auto rounded-2xl border border-slate-200">
-                    <table class="min-w-[360px] w-full text-sm">
+                    <table class="min-w-[920px] w-full text-sm">
                         <thead>
                         <tr class="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-700">
                             <th class="px-4 py-3">Move name</th>
-                            <th class="px-4 py-3" id="moves-secondary-header"><?= $selectedMethod === 'level-up' ? 'Learned at' : 'Method' ?></th>
+                            <th class="px-4 py-3" id="moves-secondary-header"><?= $selectedMethod === 'level-up' ? 'Learned at' : 'Machine' ?></th>
+                            <th class="px-4 py-3">Category</th>
+                            <th class="px-4 py-3">Power</th>
+                            <th class="px-4 py-3">Accuracy</th>
+                            <th class="px-4 py-3">PP (max)</th>
+                            <th class="px-4 py-3">Contact</th>
                         </tr>
                         </thead>
                         <tbody id="moves-table-body">
                         <?php if ($currentMoves === []): ?>
                             <tr>
-                                <td colspan="2" class="px-4 py-4 text-slate-500">No moves for this method/version combination.</td>
+                                <td colspan="7" class="px-4 py-4 text-slate-500">No moves for this method/version combination.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($currentMoves as $move): ?>
                                 <tr class="border-t border-slate-200">
                                     <td class="px-4 py-3 font-medium capitalize"><?= htmlspecialchars(str_replace('-', ' ', (string) $move['name'])) ?></td>
                                     <td class="px-4 py-3"><?= $selectedMethod === 'level-up' ? (int) $move['level'] : htmlspecialchars($formatMachineType((string) $move['name'])) ?></td>
+                                    <td class="px-4 py-3"><?= htmlspecialchars((string) ($move['category'] ?? 'Unknown')) ?></td>
+                                    <td class="px-4 py-3"><?= isset($move['power']) && $move['power'] !== null ? (int) $move['power'] : '—' ?></td>
+                                    <td class="px-4 py-3"><?= isset($move['accuracy']) && $move['accuracy'] !== null ? (int) $move['accuracy'] : '—' ?></td>
+                                    <td class="px-4 py-3"><?= isset($move['pp']) && $move['pp'] !== null ? ((int) $move['pp']) . ' / ' . (int) ($move['max_pp'] ?? $move['pp']) : '—' ?></td>
+                                    <td class="px-4 py-3"><?php if (!array_key_exists('makes_contact', $move) || $move['makes_contact'] === null): ?>—<?php else: ?><?= $move['makes_contact'] ? 'Yes' : 'No' ?><?php endif; ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -539,13 +549,13 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
 
             const renderMoves = (method) => {
                 const moves = Array.isArray(moveDataByMethod[method]) ? moveDataByMethod[method] : [];
-                secondaryHeader.textContent = method === 'level-up' ? 'Learned at' : 'Method';
+                secondaryHeader.textContent = method === 'level-up' ? 'Learned at' : 'Machine';
                 moveTableBody.innerHTML = '';
 
                 if (moves.length === 0) {
                     const row = document.createElement('tr');
                     const cell = document.createElement('td');
-                    cell.colSpan = 2;
+                    cell.colSpan = 7;
                     cell.className = 'px-4 py-4 text-slate-500';
                     cell.textContent = 'No moves for this method/version combination.';
                     row.appendChild(cell);
@@ -567,8 +577,43 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                         ? String(Number(move.level ?? 0))
                         : (hiddenMachineMoves.has(String(move.name ?? '').toLowerCase()) ? 'HM' : 'TM');
 
+                    const categoryCell = document.createElement('td');
+                    categoryCell.className = 'px-4 py-3';
+                    categoryCell.textContent = String(move.category ?? 'Unknown');
+
+                    const powerCell = document.createElement('td');
+                    powerCell.className = 'px-4 py-3';
+                    powerCell.textContent = move.power === null || move.power === undefined ? '—' : String(Number(move.power));
+
+                    const accuracyCell = document.createElement('td');
+                    accuracyCell.className = 'px-4 py-3';
+                    accuracyCell.textContent = move.accuracy === null || move.accuracy === undefined ? '—' : String(Number(move.accuracy));
+
+                    const ppCell = document.createElement('td');
+                    ppCell.className = 'px-4 py-3';
+                    if (move.pp === null || move.pp === undefined) {
+                        ppCell.textContent = '—';
+                    } else {
+                        const ppValue = Number(move.pp);
+                        const maxPpValue = move.max_pp === null || move.max_pp === undefined ? ppValue : Number(move.max_pp);
+                        ppCell.textContent = `${ppValue} / ${maxPpValue}`;
+                    }
+
+                    const contactCell = document.createElement('td');
+                    contactCell.className = 'px-4 py-3';
+                    if (move.makes_contact === null || move.makes_contact === undefined) {
+                        contactCell.textContent = '—';
+                    } else {
+                        contactCell.textContent = move.makes_contact ? 'Yes' : 'No';
+                    }
+
                     row.appendChild(moveCell);
                     row.appendChild(detailCell);
+                    row.appendChild(categoryCell);
+                    row.appendChild(powerCell);
+                    row.appendChild(accuracyCell);
+                    row.appendChild(ppCell);
+                    row.appendChild(contactCell);
                     moveTableBody.appendChild(row);
                 });
             };
