@@ -29,6 +29,28 @@ $initialPokemonCount = 24;
 $initialPokemon = array_slice($pokemon, 0, $initialPokemonCount);
 $deferredPokemon = array_slice($pokemon, $initialPokemonCount);
 $palette = pkdexGameVersionPalette();
+
+$typeColors = [
+    'fire' => 'bg-orange-400',
+    'water' => 'bg-blue-400',
+    'ground' => 'bg-yellow-600',
+    'rock' => 'bg-yellow-700',
+    'grass' => 'bg-green-500',
+    'bug' => 'bg-lime-500',
+    'fairy' => 'bg-pink-400',
+    'ice' => 'bg-cyan-300',
+    'steel' => 'bg-slate-300 text-slate-800',
+    'electric' => 'bg-yellow-400 text-slate-900',
+    'fighting' => 'bg-red-500',
+    'poison' => 'bg-purple-500',
+    'flying' => 'bg-indigo-400',
+    'psychic' => 'bg-fuchsia-400',
+    'ghost' => 'bg-violet-500',
+    'dragon' => 'bg-indigo-600',
+    'dark' => 'bg-neutral-600',
+    'normal' => 'bg-zinc-400',
+];
+
 $versionStyleMap = [];
 foreach ($availableVersions as $versionKey) {
     $color = $palette[$versionKey] ?? ['bg' => '#e2e8f0', 'text' => '#0f172a'];
@@ -171,7 +193,12 @@ foreach ($availableVersions as $versionKey) {
                         <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="mx-auto h-20 w-20 sm:h-24 sm:w-24" loading="lazy">
                         <p class="text-xs text-slate-500 text-center">#<?= (int) $entry['pokemon_id'] ?></p>
                         <h2 class="font-bold text-center capitalize"><?= htmlspecialchars((string) $entry['name']) ?></h2>
-                        <p class="text-xs text-center mt-1 text-slate-500"><?= htmlspecialchars(implode(', ', $entry['types'])) ?></p>
+                        <div class="mt-2 flex flex-wrap justify-center gap-1">
+                            <?php foreach ($entry['types'] as $type): ?>
+                                <?php $typeKey = strtolower((string) $type); ?>
+                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white <?= htmlspecialchars($typeColors[$typeKey] ?? 'bg-slate-500') ?>"><?= htmlspecialchars((string) $type) ?></span>
+                            <?php endforeach; ?>
+                        </div>
                     </a>
                 <?php endforeach; ?>
             </section>
@@ -188,9 +215,10 @@ foreach ($availableVersions as $versionKey) {
                 <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM data found for this game version.</p>
             <?php else: ?>
                 <section class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div class="grid min-w-[980px] grid-cols-[80px_90px_190px_130px_90px_90px_140px_130px] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">
-                        <p>Type</p>
+                    <div class="grid min-w-[1060px] grid-cols-[90px_90px_160px_190px_130px_90px_90px_140px_130px] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">
+                        <p>Machine</p>
                         <p>Number</p>
+                        <p>Move type</p>
                         <p>Name</p>
                         <p>Category</p>
                         <p>Power</p>
@@ -200,9 +228,11 @@ foreach ($availableVersions as $versionKey) {
                     </div>
                     <ul id="tmhm-grid" class="divide-y divide-slate-100">
                         <?php foreach ($gameTmhm as $entry): ?>
-                            <li class="tmhm-card grid min-w-[980px] grid-cols-[80px_90px_190px_130px_90px_90px_140px_130px] gap-2 px-3 py-2 text-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>" data-machine-number="<?= (int) $entry['number'] ?>" data-machine-name="<?= htmlspecialchars(strtolower((string) pkdexFormatGameVersionLabel((string) $entry['name']))) ?>">
+                            <li class="tmhm-card grid min-w-[1060px] grid-cols-[90px_90px_160px_190px_130px_90px_90px_140px_130px] gap-2 px-3 py-2 text-sm" data-machine-type="<?= htmlspecialchars(strtolower((string) $entry['type'])) ?>" data-machine-number="<?= (int) $entry['number'] ?>" data-machine-name="<?= htmlspecialchars(strtolower((string) pkdexFormatGameVersionLabel((string) $entry['name']))) ?>">
                                 <p class="font-semibold text-slate-700"><?= htmlspecialchars((string) $entry['type']) ?></p>
                                 <p class="font-mono text-slate-600"><?= (int) $entry['number'] ?></p>
+                                <?php $moveTypeKey = strtolower((string) ($entry['move_type'] ?? '')); ?>
+                                <p><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white <?= htmlspecialchars($typeColors[$moveTypeKey] ?? 'bg-slate-500') ?>"><?= htmlspecialchars((string) ($entry['move_type'] ?? 'Unknown')) ?></span></p>
                                 <p class="font-semibold capitalize text-slate-900"><?= htmlspecialchars(pkdexFormatGameVersionLabel((string) $entry['name'])) ?></p>
                                 <p class="text-slate-700"><?= htmlspecialchars((string) $entry['category']) ?></p>
                                 <p class="text-slate-700"><?= $entry['power'] !== null ? (int) $entry['power'] : '—' ?></p>
@@ -241,9 +271,10 @@ foreach ($availableVersions as $versionKey) {
             'pokemonId' => (int) $entry['pokemon_id'],
             'name' => (string) $entry['name'],
             'spriteUrl' => (string) $entry['sprite_url'],
-            'types' => implode(', ', $entry['types']),
+            'types' => array_values(array_map(static fn (string $type): string => $type, $entry['types'])),
         ];
     }, $deferredPokemon), JSON_THROW_ON_ERROR) ?>;
+    const typeColorMap = <?= json_encode($typeColors, JSON_THROW_ON_ERROR) ?>;
 
     const STORAGE_VERSION_KEY = 'pkdex:selectedVersion';
     const STORAGE_TAB_KEY = 'pkdex:activeTab';
@@ -319,11 +350,19 @@ foreach ($availableVersions as $versionKey) {
         title.className = 'font-bold text-center capitalize';
         title.textContent = entry.name;
 
-        const types = document.createElement('p');
-        types.className = 'text-xs text-center mt-1 text-slate-500';
-        types.textContent = entry.types;
+        const typesWrapper = document.createElement('div');
+        typesWrapper.className = 'mt-2 flex flex-wrap justify-center gap-1';
 
-        card.append(sprite, number, title, types);
+        (Array.isArray(entry.types) ? entry.types : []).forEach((typeName) => {
+            const typeTag = document.createElement('span');
+            const normalized = String(typeName || '').toLowerCase();
+            const colorClass = typeColorMap[normalized] || 'bg-slate-500';
+            typeTag.className = 'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white ' + colorClass;
+            typeTag.textContent = typeName;
+            typesWrapper.appendChild(typeTag);
+        });
+
+        card.append(sprite, number, title, typesWrapper);
 
         return card;
     }

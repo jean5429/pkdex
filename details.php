@@ -453,6 +453,7 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                         <thead>
                         <tr class="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-700">
                             <th class="px-4 py-3">Move name</th>
+                            <th class="px-4 py-3">Type</th>
                             <th class="px-4 py-3" id="moves-secondary-header"><?= $selectedMethod === 'level-up' ? 'Learned at' : 'Machine' ?></th>
                             <th class="px-4 py-3">Category</th>
                             <th class="px-4 py-3">Power</th>
@@ -464,12 +465,14 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                         <tbody id="moves-table-body">
                         <?php if ($currentMoves === []): ?>
                             <tr>
-                                <td colspan="7" class="px-4 py-4 text-slate-500">No moves for this method/version combination.</td>
+                                <td colspan="8" class="px-4 py-4 text-slate-500">No moves for this method/version combination.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($currentMoves as $move): ?>
                                 <tr class="border-t border-slate-200">
                                     <td class="px-4 py-3 font-medium capitalize"><?= htmlspecialchars(str_replace('-', ' ', (string) $move['name'])) ?></td>
+                                    <?php $moveTypeKey = strtolower((string) ($move['move_type'] ?? '')); ?>
+                                    <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white <?= htmlspecialchars($typeColors[$moveTypeKey] ?? 'bg-slate-500') ?>"><?= htmlspecialchars((string) ($move['move_type'] ?? 'Unknown')) ?></span></td>
                                     <td class="px-4 py-3"><?= $selectedMethod === 'level-up' ? (int) $move['level'] : htmlspecialchars($formatMachineType((string) $move['name'])) ?></td>
                                     <td class="px-4 py-3"><?= htmlspecialchars((string) ($move['category'] ?? 'Unknown')) ?></td>
                                     <td class="px-4 py-3"><?= isset($move['power']) && $move['power'] !== null ? (int) $move['power'] : '—' ?></td>
@@ -537,6 +540,7 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
     <script>
         (() => {
             const moveDataByMethod = <?= json_encode($movesByMethod, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+            const typeColorMap = <?= json_encode($typeColors, JSON_THROW_ON_ERROR) ?>;
             const hiddenMachineMoves = new Set([
                 'cut',
                 'fly',
@@ -568,7 +572,7 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                 if (moves.length === 0) {
                     const row = document.createElement('tr');
                     const cell = document.createElement('td');
-                    cell.colSpan = 7;
+                    cell.colSpan = 8;
                     cell.className = 'px-4 py-4 text-slate-500';
                     cell.textContent = 'No moves for this method/version combination.';
                     row.appendChild(cell);
@@ -583,6 +587,15 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                     const moveCell = document.createElement('td');
                     moveCell.className = 'px-4 py-3 font-medium capitalize';
                     moveCell.textContent = String(move.name ?? '').replaceAll('-', ' ');
+
+                    const typeCell = document.createElement('td');
+                    typeCell.className = 'px-4 py-3';
+                    const typeBadge = document.createElement('span');
+                    const moveType = String(move.move_type ?? 'Unknown');
+                    const moveTypeKey = moveType.toLowerCase();
+                    typeBadge.className = 'inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white ' + (typeColorMap[moveTypeKey] || 'bg-slate-500');
+                    typeBadge.textContent = moveType;
+                    typeCell.appendChild(typeBadge);
 
                     const detailCell = document.createElement('td');
                     detailCell.className = 'px-4 py-3';
@@ -621,6 +634,7 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                     }
 
                     row.appendChild(moveCell);
+                    row.appendChild(typeCell);
                     row.appendChild(detailCell);
                     row.appendChild(categoryCell);
                     row.appendChild(powerCell);
