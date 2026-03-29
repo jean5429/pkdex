@@ -8,6 +8,8 @@ $repository = new PokemonRepository((new Database($config['db']))->pdo());
 $search = isset($_GET['search']) ? (string) $_GET['search'] : '';
 $requestedVersion = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
 $selectedGen = isset($_GET['gen']) ? trim((string) $_GET['gen']) : 'all';
+$requestedLanguage = isset($_GET['language']) ? trim((string) $_GET['language']) : 'en';
+$selectedLanguage = in_array($requestedLanguage, ['en', 'ja'], true) ? $requestedLanguage : 'en';
 
 $allowedVersions = pkdexGameVersions();
 $availableVersions = array_values(array_intersect($allowedVersions, $repository->listGameVersions()));
@@ -113,9 +115,20 @@ foreach ($availableVersions as $versionKey) {
 </div>
 <main class="mx-auto max-w-6xl p-4 sm:p-6">
     <header class="mb-6">
-        <p class="text-blue-600 font-bold tracking-widest text-sm uppercase">📘 PKDex</p>
-        <h1 class="text-2xl font-black sm:text-3xl">🔎 Pokédex</h1>
-        <p class="text-slate-600 mt-2">Detailed data from the Pokémon world. Click on a Pokémon to see details.</p>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-blue-600 font-bold tracking-widest text-sm uppercase">📘 PKDex</p>
+                <h1 class="text-2xl font-black sm:text-3xl">🔎 Pokédex</h1>
+                <p class="text-slate-600 mt-2">Detailed data from the Pokémon world. Click on a Pokémon to see details.</p>
+            </div>
+            <div class="min-w-[170px]">
+                <label for="language-selector" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Language</label>
+                <select id="language-selector" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800">
+                    <option value="en" <?= $selectedLanguage === 'en' ? 'selected' : '' ?>>English</option>
+                    <option value="ja" <?= $selectedLanguage === 'ja' ? 'selected' : '' ?>>日本語</option>
+                </select>
+            </div>
+        </div>
     </header>
 
     <section class="mb-4 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm" id="content-tabs">
@@ -189,10 +202,16 @@ foreach ($availableVersions as $versionKey) {
                         class="pokemon-card rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                         data-pokemon-id="<?= (int) $entry['pokemon_id'] ?>"
                         data-name="<?= htmlspecialchars(strtolower((string) $entry['name'])) ?>"
+                        data-name-ja="<?= htmlspecialchars(strtolower((string) ($entry['name_japanese'] ?? ''))) ?>"
                     >
                         <img src="<?= htmlspecialchars((string) $entry['sprite_url']) ?>" alt="<?= htmlspecialchars((string) $entry['name']) ?>" class="mx-auto h-20 w-20 sm:h-24 sm:w-24" loading="lazy">
                         <p class="text-xs text-slate-500 text-center">#<?= (int) $entry['pokemon_id'] ?></p>
-                        <h2 class="font-bold text-center capitalize"><?= htmlspecialchars((string) $entry['name']) ?></h2>
+                        <?php
+                        $displayName = $selectedLanguage === 'ja' && !empty($entry['name_japanese'])
+                            ? (string) $entry['name_japanese']
+                            : (string) $entry['name'];
+                        ?>
+                        <h2 class="pokemon-name font-bold text-center <?= $selectedLanguage === 'ja' ? '' : 'capitalize' ?>" data-name-en="<?= htmlspecialchars((string) $entry['name']) ?>" data-name-ja="<?= htmlspecialchars((string) ($entry['name_japanese'] ?? '')) ?>"><?= htmlspecialchars($displayName) ?></h2>
                         <div class="mt-2 flex flex-wrap justify-center gap-1">
                             <?php foreach ($entry['types'] as $type): ?>
                                 <?php $typeKey = strtolower((string) $type); ?>
@@ -270,14 +289,16 @@ foreach ($availableVersions as $versionKey) {
         return [
             'pokemonId' => (int) $entry['pokemon_id'],
             'name' => (string) $entry['name'],
+            'nameJapanese' => (string) ($entry['name_japanese'] ?? ''),
             'spriteUrl' => (string) $entry['sprite_url'],
             'types' => array_values(array_map(static fn (string $type): string => $type, $entry['types'])),
         ];
     }, $deferredPokemon), JSON_THROW_ON_ERROR) ?>;
     const typeColorMap = <?= json_encode($typeColors, JSON_THROW_ON_ERROR) ?>;
-
+    const languageSelector = document.getElementById('language-selector');
     const STORAGE_VERSION_KEY = 'pkdex:selectedVersion';
     const STORAGE_TAB_KEY = 'pkdex:activeTab';
+    const STORAGE_LANGUAGE_KEY = 'pkdex:selectedLanguage';
     const initialUrl = new URL(window.location.href);
     const queryTab = initialUrl.searchParams.get('tab');
 
@@ -306,8 +327,13 @@ foreach ($availableVersions as $versionKey) {
     }
 
     const savedTab = getStoredValue(STORAGE_TAB_KEY);
+    const savedLanguage = getStoredValue(STORAGE_LANGUAGE_KEY);
 
     let activeGen = <?= json_encode($selectedGen, JSON_THROW_ON_ERROR) ?>;
+    let activeLanguage = <?= json_encode($selectedLanguage, JSON_THROW_ON_ERROR) ?>;
+    if (savedLanguage === 'en' || savedLanguage === 'ja') {
+        activeLanguage = savedLanguage;
+    }
     let activeTab = (queryTab === 'pokemon' || queryTab === 'tmhm')
         ? queryTab
         : ((savedTab === 'pokemon' || savedTab === 'tmhm') ? savedTab : 'pokemon');
@@ -330,6 +356,7 @@ foreach ($availableVersions as $versionKey) {
         card.className = 'pokemon-card rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500';
         card.dataset.pokemonId = String(entry.pokemonId);
         card.dataset.name = String(entry.name).toLowerCase();
+        card.dataset.nameJa = String(entry.nameJapanese || '').toLowerCase();
 
         const versionParam = versionInput.value
             ? '&version=' + encodeURIComponent(versionInput.value)
@@ -347,8 +374,11 @@ foreach ($availableVersions as $versionKey) {
         number.textContent = '#' + entry.pokemonId;
 
         const title = document.createElement('h2');
-        title.className = 'font-bold text-center capitalize';
-        title.textContent = entry.name;
+        title.className = 'pokemon-name font-bold text-center';
+        title.dataset.nameEn = entry.name;
+        title.dataset.nameJa = entry.nameJapanese || '';
+        title.textContent = activeLanguage === 'ja' && entry.nameJapanese ? entry.nameJapanese : entry.name;
+        title.classList.toggle('capitalize', activeLanguage !== 'ja');
 
         const typesWrapper = document.createElement('div');
         typesWrapper.className = 'mt-2 flex flex-wrap justify-center gap-1';
@@ -451,8 +481,10 @@ foreach ($availableVersions as $versionKey) {
         let visiblePokemon = 0;
         getCards().forEach((card) => {
             const pokemonId = Number(card.dataset.pokemonId);
-            const name = card.dataset.name || '';
-            const matchesSearch = searchTerm === '' || name.includes(searchTerm) || String(pokemonId) === searchTerm;
+            const englishName = card.dataset.name || '';
+            const japaneseName = card.dataset.nameJa || '';
+            const selectedName = activeLanguage === 'ja' ? japaneseName : englishName;
+            const matchesSearch = searchTerm === '' || selectedName.includes(searchTerm) || String(pokemonId) === searchTerm;
             const matchesGen = activeGen === 'all' || (minId !== null && maxId !== null && pokemonId >= minId && pokemonId <= maxId);
             const isVisible = matchesSearch && matchesGen;
             card.classList.toggle('hidden', !isVisible);
@@ -531,6 +563,12 @@ foreach ($availableVersions as $versionKey) {
             url.searchParams.delete('tab');
         }
 
+        if (activeLanguage !== 'en') {
+            url.searchParams.set('language', activeLanguage);
+        } else {
+            url.searchParams.delete('language');
+        }
+
         if (versionInput.value !== '') {
             setStoredValue(STORAGE_VERSION_KEY, versionInput.value);
         } else {
@@ -538,6 +576,7 @@ foreach ($availableVersions as $versionKey) {
         }
 
         setStoredValue(STORAGE_TAB_KEY, activeTab);
+        setStoredValue(STORAGE_LANGUAGE_KEY, activeLanguage);
 
         const query = url.searchParams.toString();
         const targetUrl = query === '' ? url.pathname : (url.pathname + '?' + query);
@@ -615,9 +654,38 @@ foreach ($availableVersions as $versionKey) {
             syncUrlWithFilters();
         });
     });
+
+    function applyLanguage() {
+        getCards().forEach((card) => {
+            const pokemonNameNode = card.querySelector('.pokemon-name');
+            if (!pokemonNameNode) {
+                return;
+            }
+
+            const englishName = pokemonNameNode.dataset.nameEn || '';
+            const japaneseName = pokemonNameNode.dataset.nameJa || '';
+            const nextName = activeLanguage === 'ja' && japaneseName !== '' ? japaneseName : englishName;
+            pokemonNameNode.textContent = nextName;
+            pokemonNameNode.classList.toggle('capitalize', activeLanguage !== 'ja');
+        });
+    }
+
+    if (languageSelector) {
+        languageSelector.value = activeLanguage;
+        languageSelector.addEventListener('change', () => {
+            const selectedValue = languageSelector.value === 'ja' ? 'ja' : 'en';
+            activeLanguage = selectedValue;
+            setStoredValue(STORAGE_LANGUAGE_KEY, activeLanguage);
+            applyLanguage();
+            applyFilters();
+            syncUrlWithFilters();
+        });
+    }
     form.addEventListener('submit', (event) => event.preventDefault());
 
     setStoredValue(STORAGE_TAB_KEY, activeTab);
+    setStoredValue(STORAGE_LANGUAGE_KEY, activeLanguage);
+    applyLanguage();
     setActiveTab();
     setActiveGenButton();
     applyFilters();

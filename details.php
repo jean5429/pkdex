@@ -324,6 +324,7 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                     <img src="<?= htmlspecialchars($officialArtworkShinyUrl) ?>" alt="shiny sprite" class="mx-auto h-40 w-40 object-contain md:h-52 md:w-52" loading="lazy">
                 </div>
                 <h3 class="mt-6 text-center text-2xl font-bold capitalize"><?= htmlspecialchars((string) $pokemon['name']) ?></h3>
+                <p class="mt-2 text-center text-base sm:text-lg">Japanese name: <?= htmlspecialchars((string) ($pokemon['name_japanese'] ?: 'Unknown')) ?></p>
                 <p class="mt-3 text-center text-base sm:text-xl">Height: <?= number_format(((int) $pokemon['height']) / 10, 2) ?> m | Weight: <?= number_format(((int) $pokemon['weight']) / 10, 2) ?> kg</p>
                 <p class="mt-2 text-center text-base sm:text-lg">Gender: ♂ <?= htmlspecialchars($formatPercentage($pokemon['male_percentage'] ?? null)) ?> | ♀ <?= htmlspecialchars($formatPercentage($pokemon['female_percentage'] ?? null)) ?></p>
                 <p class="mt-1 text-center text-base sm:text-lg">🥚 Egg Group: <?= htmlspecialchars((string) ($pokemon['egg_groups'] ?: 'Unknown')) ?></p>

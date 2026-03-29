@@ -26,6 +26,8 @@ $pdo->exec($schemaSql);
 // $pdo->exec('ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS egg_groups VARCHAR(255) DEFAULT NULL');
 // $pdo->exec('CREATE TABLE IF NOT EXISTS game_tmhm (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, move_name VARCHAR(100) NOT NULL, machine_name VARCHAR(100) NOT NULL, game_version VARCHAR(80) NOT NULL, move_category VARCHAR(20) DEFAULT NULL, move_power SMALLINT UNSIGNED DEFAULT NULL, move_accuracy SMALLINT UNSIGNED DEFAULT NULL, move_pp SMALLINT UNSIGNED DEFAULT NULL, move_max_pp SMALLINT UNSIGNED DEFAULT NULL, makes_contact TINYINT(1) DEFAULT NULL, UNIQUE KEY unique_tmhm_per_version (move_name, machine_name, game_version))');
 
+ensurePokemonJapaneseNameColumn($pdo);
+
 $baseUrl = rtrim((string) $config['pokeapi']['base_url'], '/');
 $limit = (int) $config['pokeapi']['limit'];
 $offset = (int) $config['pokeapi']['offset'];
@@ -40,10 +42,11 @@ if (!isset($listResponse['results']) || !is_array($listResponse['results'])) {
 }
 
 $pokemonStmt = $pdo->prepare(
-    'INSERT INTO pokemon (pokemon_id, name, sprite_url, sprite_shiny_url, height, weight, base_experience, male_percentage, female_percentage, egg_groups)
-     VALUES (:pokemon_id, :name, :sprite_url, :sprite_shiny_url, :height, :weight, :base_experience, :male_percentage, :female_percentage, :egg_groups)
+    'INSERT INTO pokemon (pokemon_id, name, name_japanese, sprite_url, sprite_shiny_url, height, weight, base_experience, male_percentage, female_percentage, egg_groups)
+     VALUES (:pokemon_id, :name, :name_japanese, :sprite_url, :sprite_shiny_url, :height, :weight, :base_experience, :male_percentage, :female_percentage, :egg_groups)
      ON DUPLICATE KEY UPDATE
         name = VALUES(name),
+        name_japanese = VALUES(name_japanese),
         sprite_url = VALUES(sprite_url),
         sprite_shiny_url = VALUES(sprite_shiny_url),
         height = VALUES(height),
@@ -211,6 +214,7 @@ foreach ($listResponse['results'] as $item) {
     }
 
     $eggGroups = $eggGroupNames !== [] ? implode(', ', $eggGroupNames) : null;
+    $nameJapanese = extractJapanesePokemonName($speciesData);
 
     $pdo->beginTransaction();
 
@@ -218,6 +222,7 @@ foreach ($listResponse['results'] as $item) {
         $pokemonStmt->execute([
             ':pokemon_id' => $pokemonId,
             ':name' => (string) $pokemonData['name'],
+            ':name_japanese' => $nameJapanese,
             ':sprite_url' => (string) ($pokemonData['sprites']['front_default'] ?? ''),
             ':sprite_shiny_url' => (string) ($pokemonData['sprites']['front_shiny'] ?? ''),
             ':height' => (int) ($pokemonData['height'] ?? 0),
@@ -470,6 +475,50 @@ function ensureMoveMetadataTable(PDO $pdo): void
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         )'
     );
+}
+
+function ensurePokemonJapaneseNameColumn(PDO $pdo): void
+{
+    $stmt = $pdo->query("SHOW COLUMNS FROM pokemon LIKE 'name_japanese'");
+    $exists = $stmt !== false ? $stmt->fetch() : false;
+
+    if ($exists !== false) {
+        return;
+    }
+
+    $pdo->exec('ALTER TABLE pokemon ADD COLUMN name_japanese VARCHAR(100) DEFAULT NULL AFTER name');
+}
+
+/**
+ * @param array<string, mixed> $speciesData
+ */
+function extractJapanesePokemonName(array $speciesData): ?string
+{
+    $languagePreferenceOrder = ['ja-Hrkt', 'ja', 'roomaji'];
+    $nameByLanguage = [];
+
+    foreach (($speciesData['names'] ?? []) as $nameEntry) {
+        if (!is_array($nameEntry)) {
+            continue;
+        }
+
+        $language = isset($nameEntry['language']['name']) ? (string) $nameEntry['language']['name'] : '';
+        $name = isset($nameEntry['name']) ? trim((string) $nameEntry['name']) : '';
+
+        if ($language === '' || $name === '') {
+            continue;
+        }
+
+        $nameByLanguage[$language] = $name;
+    }
+
+    foreach ($languagePreferenceOrder as $language) {
+        if (isset($nameByLanguage[$language])) {
+            return $nameByLanguage[$language];
+        }
+    }
+
+    return null;
 }
 
 /**
