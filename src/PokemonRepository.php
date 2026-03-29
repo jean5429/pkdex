@@ -17,7 +17,7 @@ final class PokemonRepository
         $params = [];
         $conditions = [];
 
-        $sql = 'SELECT p.pokemon_id, p.name, p.sprite_url, p.base_experience FROM pokemon p';
+        $sql = 'SELECT p.pokemon_id, p.name, p.name_japanese, p.sprite_url, p.base_experience FROM pokemon p';
 
         if ($search !== '') {
             $conditions[] = '(p.name LIKE :term OR CAST(p.pokemon_id AS CHAR) = :idTerm)';
@@ -165,7 +165,7 @@ final class PokemonRepository
     public function getPokemonDetails(int $pokemonId): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT pokemon_id, name, sprite_url, sprite_shiny_url, height, weight, base_experience, male_percentage, female_percentage, egg_groups, updated_at
+            'SELECT pokemon_id, name, name_japanese, sprite_url, sprite_shiny_url, height, weight, base_experience, male_percentage, female_percentage, egg_groups, updated_at
              FROM pokemon
              WHERE pokemon_id = :pokemonId'
         );
