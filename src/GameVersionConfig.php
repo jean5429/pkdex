@@ -77,6 +77,91 @@ function pkdexFormatGameVersionLabel(string $value): string
     return ucwords(str_replace(['-', '_'], ' ', $value));
 }
 
+function pkdexFormatGameVersionLabelLocalized(string $value, string $language = 'en'): string
+{
+    if ($language !== 'ja') {
+        return pkdexFormatGameVersionLabel($value);
+    }
+
+    static $labels = [
+        'red-blue' => '赤・青',
+        'yellow' => 'ピカチュウ',
+        'gold-silver' => '金・銀',
+        'crystal' => 'クリスタル',
+        'ruby-sapphire' => 'ルビー・サファイア',
+        'emerald' => 'エメラルド',
+        'firered-leafgreen' => 'ファイアレッド・リーフグリーン',
+        'diamond-pearl' => 'ダイヤモンド・パール',
+        'platinum' => 'プラチナ',
+        'heartgold-soulsilver' => 'ハートゴールド・ソウルシルバー',
+        'black-white' => 'ブラック・ホワイト',
+        'black-2-white-2' => 'ブラック2・ホワイト2',
+        'x-y' => 'X・Y',
+        'omega-ruby-alpha-sapphire' => 'オメガルビー・アルファサファイア',
+        'sun-moon' => 'サン・ムーン',
+        'ultra-sun-ultra-moon' => 'ウルトラサン・ウルトラムーン',
+        'lets-go-pikachu-lets-go-eevee' => 'Let\'s Go! ピカチュウ・Let\'s Go! イーブイ',
+        'sword-shield' => 'ソード・シールド',
+        'brilliant-diamond-and-shining-pearl' => 'ブリリアントダイヤモンド・シャイニングパール',
+        'scarlet-violet' => 'スカーレット・バイオレット',
+    ];
+
+    return $labels[$value] ?? pkdexFormatGameVersionLabel($value);
+}
+
+function pkdexTranslateTypeLabel(string $type, string $language = 'en'): string
+{
+    if ($language !== 'ja') {
+        return $type;
+    }
+
+    static $labels = [
+        'normal' => 'ノーマル',
+        'fire' => 'ほのお',
+        'water' => 'みず',
+        'electric' => 'でんき',
+        'grass' => 'くさ',
+        'ice' => 'こおり',
+        'fighting' => 'かくとう',
+        'poison' => 'どく',
+        'ground' => 'じめん',
+        'flying' => 'ひこう',
+        'psychic' => 'エスパー',
+        'bug' => 'むし',
+        'rock' => 'いわ',
+        'ghost' => 'ゴースト',
+        'dragon' => 'ドラゴン',
+        'dark' => 'あく',
+        'steel' => 'はがね',
+        'fairy' => 'フェアリー',
+    ];
+
+    $key = strtolower($type);
+
+    return $labels[$key] ?? $type;
+}
+
+function pkdexFormatGenerationLabel(string $label, string $language = 'en'): string
+{
+    if ($language !== 'ja') {
+        return $label;
+    }
+
+    static $labels = [
+        '1st Gen' => '第1世代',
+        '2nd Gen' => '第2世代',
+        '3rd Gen' => '第3世代',
+        '4th Gen' => '第4世代',
+        '5th Gen' => '第5世代',
+        '6th Gen' => '第6世代',
+        '7th Gen' => '第7世代',
+        '8th Gen' => '第8世代',
+        '9th Gen' => '第9世代',
+    ];
+
+    return $labels[$label] ?? $label;
+}
+
 function pkdexNormalizeGameVersion(string $value): string
 {
     static $map = [

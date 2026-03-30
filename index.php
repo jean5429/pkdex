@@ -66,8 +66,41 @@ foreach ($availableVersions as $versionKey) {
 }
 
 ?>
+<?php
+$text = [
+    'loading' => $selectedLanguage === 'ja' ? '読み込み中' : 'Loading',
+    'subtitle' => $selectedLanguage === 'ja' ? 'ポケモンの世界の詳細データ。ポケモンをクリックすると詳細が見られます。' : 'Detailed data from the Pokémon world. Click on a Pokémon to see details.',
+    'language' => $selectedLanguage === 'ja' ? '言語' : 'Language',
+    'tab_pokemon' => $selectedLanguage === 'ja' ? '🧬 ポケモン' : '🧬 Pokémon',
+    'tab_tmhm' => $selectedLanguage === 'ja' ? '💿 わざマシン / ひでんマシン' : '💿 TM / HM',
+    'all_gens' => $selectedLanguage === 'ja' ? '🌐 全世代' : '🌐 All Gens',
+    'search_label' => $selectedLanguage === 'ja' ? '名前または番号で検索' : 'Search by name or number',
+    'search_pokemon_placeholder' => $selectedLanguage === 'ja' ? 'ピカチュウ または 25' : 'pikachu or 25',
+    'game_version' => $selectedLanguage === 'ja' ? '🎮 ゲームバージョン' : '🎮 Game version',
+    'select_game_version' => $selectedLanguage === 'ja' ? 'ゲームバージョンを選択' : 'Select game version',
+    'no_pokemon_in_db' => $selectedLanguage === 'ja' ? 'データベースにポケモンが見つかりません。先に <code>php update_database.php</code> を実行してください。' : 'No Pokémon found in the database. Run <code>php update_database.php</code> first.',
+    'no_pokemon_filters' => $selectedLanguage === 'ja' ? '現在のフィルターに一致するポケモンはいません。' : 'No Pokémon match the current filters.',
+    'tmhm_all' => $selectedLanguage === 'ja' ? 'わざマシン + ひでんマシン' : 'TM + HM',
+    'tmhm_only_tm' => $selectedLanguage === 'ja' ? 'わざマシンのみ' : 'Only TM',
+    'tmhm_only_hm' => $selectedLanguage === 'ja' ? 'ひでんマシンのみ' : 'Only HM',
+    'tmhm_no_data' => $selectedLanguage === 'ja' ? 'このゲームバージョンのわざマシン/ひでんマシンデータが見つかりません。' : 'No TM/HM data found for this game version.',
+    'tmhm_machine' => $selectedLanguage === 'ja' ? '種別' : 'Machine',
+    'tmhm_number' => $selectedLanguage === 'ja' ? '番号' : 'Number',
+    'tmhm_move_type' => $selectedLanguage === 'ja' ? 'タイプ' : 'Move type',
+    'tmhm_name' => $selectedLanguage === 'ja' ? '名前' : 'Name',
+    'tmhm_category' => $selectedLanguage === 'ja' ? '分類' : 'Category',
+    'tmhm_power' => $selectedLanguage === 'ja' ? '威力' : 'Power',
+    'tmhm_accuracy' => $selectedLanguage === 'ja' ? '命中' : 'Accuracy',
+    'tmhm_pp' => $selectedLanguage === 'ja' ? 'PP（最大）' : 'PP (max)',
+    'tmhm_contact' => $selectedLanguage === 'ja' ? '接触' : 'Contact',
+    'tmhm_no_match' => $selectedLanguage === 'ja' ? '選択したタイプに一致するわざマシン/ひでんマシンがありません。' : 'No TM/HM entries match the selected type filter.',
+    'no_data' => $selectedLanguage === 'ja' ? 'データなし' : 'No data',
+    'yes' => $selectedLanguage === 'ja' ? 'はい' : 'Yes',
+    'no' => $selectedLanguage === 'ja' ? 'いいえ' : 'No',
+];
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($selectedLanguage) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -111,7 +144,7 @@ foreach ($availableVersions as $versionKey) {
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
 <div id="page-loading-overlay" class="page-loading-overlay" aria-hidden="false">
-    <div class="loading-spinner" role="status" aria-label="Loading"></div>
+    <div class="loading-spinner" role="status" aria-label="<?= htmlspecialchars($text['loading']) ?>"></div>
 </div>
 <main class="mx-auto max-w-6xl p-4 sm:p-6">
     <header class="mb-6">
@@ -119,10 +152,10 @@ foreach ($availableVersions as $versionKey) {
             <div>
                 <p class="text-blue-600 font-bold tracking-widest text-sm uppercase">📘 PKDex</p>
                 <h1 class="text-2xl font-black sm:text-3xl">🔎 Pokédex</h1>
-                <p class="text-slate-600 mt-2">Detailed data from the Pokémon world. Click on a Pokémon to see details.</p>
+                <p class="text-slate-600 mt-2"><?= htmlspecialchars($text['subtitle']) ?></p>
             </div>
             <div class="min-w-[170px]">
-                <label for="language-selector" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Language</label>
+                <label for="language-selector" class="block text-xs font-semibold uppercase tracking-wide text-slate-500"><?= htmlspecialchars($text['language']) ?></label>
                 <select id="language-selector" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800">
                     <option value="en" <?= $selectedLanguage === 'en' ? 'selected' : '' ?>>English</option>
                     <option value="ja" <?= $selectedLanguage === 'ja' ? 'selected' : '' ?>>日本語</option>
@@ -132,8 +165,8 @@ foreach ($availableVersions as $versionKey) {
     </header>
 
     <section class="mb-4 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm" id="content-tabs">
-        <button type="button" data-tab="pokemon" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-blue-600 text-white sm:flex-none">🧬 Pokémon</button>
-        <button type="button" data-tab="tmhm" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-800 hover:bg-slate-200 sm:flex-none">💿 TM / HM</button>
+        <button type="button" data-tab="pokemon" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-blue-600 text-white sm:flex-none"><?= htmlspecialchars($text['tab_pokemon']) ?></button>
+        <button type="button" data-tab="tmhm" class="tab-btn flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-800 hover:bg-slate-200 sm:flex-none"><?= htmlspecialchars($text['tab_tmhm']) ?></button>
     </section>
 
     <section class="mb-4 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm" id="gen-filters">
@@ -146,28 +179,28 @@ foreach ($availableVersions as $versionKey) {
                 data-max-id="<?= (int) $range['max'] ?>"
                 class="gen-filter-btn rounded-lg px-3 py-2 text-sm font-semibold <?= $isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>"
             >
-                <?= htmlspecialchars($label) ?>
+                <?= htmlspecialchars(pkdexFormatGenerationLabel($label, $selectedLanguage)) ?>
             </button>
         <?php endforeach; ?>
-        <button type="button" data-gen-label="all" class="gen-filter-btn rounded-lg px-3 py-2 text-sm font-semibold <?= $selectedGen === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>">🌐 All Gens</button>
+        <button type="button" data-gen-label="all" class="gen-filter-btn rounded-lg px-3 py-2 text-sm font-semibold <?= $selectedGen === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>"><?= htmlspecialchars($text['all_gens']) ?></button>
     </section>
 
     <form method="get" id="filters-form" class="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <input type="hidden" id="active-tab-input" name="tab" value="<?= isset($_GET['tab']) ? htmlspecialchars((string) $_GET['tab']) : '' ?>">
         <div class="grid gap-4">
             <div>
-                <label for="search" class="font-semibold text-sm">Search by name or number</label>
-                <input id="search" name="search" value="<?= htmlspecialchars($search) ?>" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="pikachu or 25">
+                <label for="search" class="font-semibold text-sm"><?= htmlspecialchars($text['search_label']) ?></label>
+                <input id="search" name="search" value="<?= htmlspecialchars($search) ?>" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="<?= htmlspecialchars($text['search_pokemon_placeholder']) ?>">
             </div>
             <div>
-                <label class="font-semibold text-sm">🎮 Game version</label>
+                <label class="font-semibold text-sm"><?= htmlspecialchars($text['game_version']) ?></label>
                 <input type="hidden" id="version" name="version" value="<?= htmlspecialchars($selectedVersion) ?>">
                 <div class="mt-2 sm:hidden">
-                    <label for="version-mobile" class="sr-only">Select game version</label>
+                    <label for="version-mobile" class="sr-only"><?= htmlspecialchars($text['select_game_version']) ?></label>
                     <select id="version-mobile" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800">
                         <?php foreach ($availableVersions as $version): ?>
                             <option value="<?= htmlspecialchars($version) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>>
-                                <?= htmlspecialchars(pkdexFormatGameVersionLabel($version)) ?>
+                                <?= htmlspecialchars(pkdexFormatGameVersionLabelLocalized($version, $selectedLanguage)) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -181,7 +214,7 @@ foreach ($availableVersions as $versionKey) {
                             class="version-option rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold <?= $version === $selectedVersion ? 'ring-2 ring-blue-500' : '' ?>"
                             style="background: <?= htmlspecialchars($style['bg']) ?>; color: <?= htmlspecialchars($style['text']) ?>"
                         >
-                            <?= htmlspecialchars(pkdexFormatGameVersionLabel($version)) ?>
+                            <?= htmlspecialchars(pkdexFormatGameVersionLabelLocalized($version, $selectedLanguage)) ?>
                         </button>
                     <?php endforeach; ?>
                 </div>
@@ -191,7 +224,7 @@ foreach ($availableVersions as $versionKey) {
 
     <?php if ($pokemon === []): ?>
         <section class="bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">
-            No Pokémon found in the database. Run <code>php update_database.php</code> first.
+            <?= $text['no_pokemon_in_db'] ?>
         </section>
     <?php else: ?>
         <section id="pokemon-panel" class="tab-panel">
@@ -215,35 +248,35 @@ foreach ($availableVersions as $versionKey) {
                         <div class="mt-2 flex flex-wrap justify-center gap-1">
                             <?php foreach ($entry['types'] as $type): ?>
                                 <?php $typeKey = strtolower((string) $type); ?>
-                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white <?= htmlspecialchars($typeColors[$typeKey] ?? 'bg-slate-500') ?>"><?= htmlspecialchars((string) $type) ?></span>
+                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white <?= htmlspecialchars($typeColors[$typeKey] ?? 'bg-slate-500') ?>" data-type-en="<?= htmlspecialchars((string) $type) ?>"><?= htmlspecialchars(pkdexTranslateTypeLabel((string) $type, $selectedLanguage)) ?></span>
                             <?php endforeach; ?>
                         </div>
                     </a>
                 <?php endforeach; ?>
             </section>
-            <p id="pokemon-empty-message" class="hidden mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No Pokémon match the current filters.</p>
+            <p id="pokemon-empty-message" class="hidden mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4"><?= htmlspecialchars($text['no_pokemon_filters']) ?></p>
         </section>
 
         <section id="tmhm-panel" class="tab-panel hidden">
             <div class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3" id="tmhm-type-switcher">
-                <button type="button" data-tmhm-type="all" class="rounded px-3 py-1 font-semibold bg-slate-800 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">TM + HM</button>
-                <button type="button" data-tmhm-type="tm" class="rounded px-3 py-1 font-semibold text-slate-700 hover:bg-slate-200">Only TM</button>
-                <button type="button" data-tmhm-type="hm" class="rounded px-3 py-1 font-semibold text-slate-700 hover:bg-slate-200">Only HM</button>
+                <button type="button" data-tmhm-type="all" class="rounded px-3 py-1 font-semibold bg-slate-800 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><?= htmlspecialchars($text['tmhm_all']) ?></button>
+                <button type="button" data-tmhm-type="tm" class="rounded px-3 py-1 font-semibold text-slate-700 hover:bg-slate-200"><?= htmlspecialchars($text['tmhm_only_tm']) ?></button>
+                <button type="button" data-tmhm-type="hm" class="rounded px-3 py-1 font-semibold text-slate-700 hover:bg-slate-200"><?= htmlspecialchars($text['tmhm_only_hm']) ?></button>
             </div>
             <?php if ($gameTmhm === []): ?>
-                <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM data found for this game version.</p>
+                <p id="tmhm-empty-message" class="mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4"><?= htmlspecialchars($text['tmhm_no_data']) ?></p>
             <?php else: ?>
                 <section class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="grid min-w-[980px] grid-cols-[80px_80px_130px_170px_120px_80px_90px_120px_90px] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">
-                        <p>Machine</p>
-                        <p>Number</p>
-                        <p>Move type</p>
-                        <p>Name</p>
-                        <p>Category</p>
-                        <p>Power</p>
-                        <p>Accuracy</p>
-                        <p>PP (max)</p>
-                        <p>Contact</p>
+                        <p><?= htmlspecialchars($text['tmhm_machine']) ?></p>
+                        <p><?= htmlspecialchars($text['tmhm_number']) ?></p>
+                        <p><?= htmlspecialchars($text['tmhm_move_type']) ?></p>
+                        <p><?= htmlspecialchars($text['tmhm_name']) ?></p>
+                        <p><?= htmlspecialchars($text['tmhm_category']) ?></p>
+                        <p><?= htmlspecialchars($text['tmhm_power']) ?></p>
+                        <p><?= htmlspecialchars($text['tmhm_accuracy']) ?></p>
+                        <p><?= htmlspecialchars($text['tmhm_pp']) ?></p>
+                        <p><?= htmlspecialchars($text['tmhm_contact']) ?></p>
                     </div>
                     <ul id="tmhm-grid" class="divide-y divide-slate-100">
                         <?php foreach ($gameTmhm as $entry): ?>
@@ -251,18 +284,18 @@ foreach ($availableVersions as $versionKey) {
                                 <p class="font-semibold text-slate-700"><?= htmlspecialchars((string) $entry['type']) ?></p>
                                 <p class="font-mono text-slate-600"><?= (int) $entry['number'] ?></p>
                                 <?php $moveTypeKey = strtolower((string) ($entry['move_type'] ?? '')); ?>
-                                <p><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white <?= htmlspecialchars($typeColors[$moveTypeKey] ?? 'bg-slate-500') ?>"><?= htmlspecialchars((string) ($entry['move_type'] ?? 'Unknown')) ?></span></p>
+                                <p><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white <?= htmlspecialchars($typeColors[$moveTypeKey] ?? 'bg-slate-500') ?>" data-type-en="<?= htmlspecialchars((string) ($entry['move_type'] ?? 'Unknown')) ?>"><?= htmlspecialchars(pkdexTranslateTypeLabel((string) ($entry['move_type'] ?? 'Unknown'), $selectedLanguage)) ?></span></p>
                                 <p class="font-semibold capitalize text-slate-900"><?= htmlspecialchars(pkdexFormatGameVersionLabel((string) $entry['name'])) ?></p>
                                 <p class="text-slate-700"><?= htmlspecialchars((string) $entry['category']) ?></p>
                                 <p class="text-slate-700"><?= $entry['power'] !== null ? (int) $entry['power'] : '—' ?></p>
                                 <p class="text-slate-700"><?= $entry['accuracy'] !== null ? (int) $entry['accuracy'] : '—' ?></p>
                                 <p class="text-slate-700"><?= $entry['pp'] !== null ? ((int) $entry['pp']) . ' / ' . ((int) ($entry['max_pp'] ?? $entry['pp'])) : '—' ?></p>
-                                <p class="text-slate-700"><?php if ($entry['makes_contact'] === null): ?>No data<?php else: ?><?= $entry['makes_contact'] ? 'Yes' : 'No' ?><?php endif; ?></p>
+                                <p class="text-slate-700"><?php if ($entry['makes_contact'] === null): ?><?= htmlspecialchars($text['no_data']) ?><?php else: ?><?= $entry['makes_contact'] ? htmlspecialchars($text['yes']) : htmlspecialchars($text['no']) ?><?php endif; ?></p>
                             </li>
                         <?php endforeach; ?>
                     </ul>
                 </section>
-                <p id="tmhm-filter-empty-message" class="hidden mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4">No TM/HM entries match the selected type filter.</p>
+                <p id="tmhm-filter-empty-message" class="hidden mt-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4"><?= htmlspecialchars($text['tmhm_no_match']) ?></p>
             <?php endif; ?>
         </section>
     <?php endif; ?>
@@ -338,9 +371,67 @@ foreach ($availableVersions as $versionKey) {
         ? queryTab
         : ((savedTab === 'pokemon' || savedTab === 'tmhm') ? savedTab : 'pokemon');
     let activeTmhmType = 'all';
+    const i18n = {
+        en: {
+            searchPlaceholderPokemon: 'pikachu or 25',
+            searchPlaceholderTmhm: 'fly or 10',
+            tabs: {
+                pokemon: '🧬 Pokémon',
+                tmhm: '💿 TM / HM',
+            },
+            types: {
+                normal: 'Normal',
+                fire: 'Fire',
+                water: 'Water',
+                electric: 'Electric',
+                grass: 'Grass',
+                ice: 'Ice',
+                fighting: 'Fighting',
+                poison: 'Poison',
+                ground: 'Ground',
+                flying: 'Flying',
+                psychic: 'Psychic',
+                bug: 'Bug',
+                rock: 'Rock',
+                ghost: 'Ghost',
+                dragon: 'Dragon',
+                dark: 'Dark',
+                steel: 'Steel',
+                fairy: 'Fairy',
+            },
+        },
+        ja: {
+            searchPlaceholderPokemon: 'ピカチュウ または 25',
+            searchPlaceholderTmhm: 'そらをとぶ または 10',
+            tabs: {
+                pokemon: '🧬 ポケモン',
+                tmhm: '💿 わざマシン / ひでんマシン',
+            },
+            types: {
+                normal: 'ノーマル',
+                fire: 'ほのお',
+                water: 'みず',
+                electric: 'でんき',
+                grass: 'くさ',
+                ice: 'こおり',
+                fighting: 'かくとう',
+                poison: 'どく',
+                ground: 'じめん',
+                flying: 'ひこう',
+                psychic: 'エスパー',
+                bug: 'むし',
+                rock: 'いわ',
+                ghost: 'ゴースト',
+                dragon: 'ドラゴン',
+                dark: 'あく',
+                steel: 'はがね',
+                fairy: 'フェアリー',
+            },
+        },
+    };
     const searchPlaceholderByTab = {
-        pokemon: 'pikachu or 25',
-        tmhm: 'fly or 10',
+        pokemon: i18n[activeLanguage].searchPlaceholderPokemon,
+        tmhm: i18n[activeLanguage].searchPlaceholderTmhm,
     };
 
     function getCards() {
@@ -388,7 +479,8 @@ foreach ($availableVersions as $versionKey) {
             const normalized = String(typeName || '').toLowerCase();
             const colorClass = typeColorMap[normalized] || 'bg-slate-500';
             typeTag.className = 'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white ' + colorClass;
-            typeTag.textContent = typeName;
+            typeTag.dataset.typeEn = String(typeName);
+            typeTag.textContent = localizeType(typeName);
             typesWrapper.appendChild(typeTag);
         });
 
@@ -442,11 +534,19 @@ foreach ($availableVersions as $versionKey) {
         }
 
         if (searchInput) {
+            searchPlaceholderByTab.pokemon = i18n[activeLanguage].searchPlaceholderPokemon;
+            searchPlaceholderByTab.tmhm = i18n[activeLanguage].searchPlaceholderTmhm;
             searchInput.placeholder = searchPlaceholderByTab[activeTab] || searchPlaceholderByTab.pokemon;
         }
 
         tabButtons.forEach((button) => {
             const isActive = button.dataset.tab === activeTab;
+            if (button.dataset.tab === 'pokemon') {
+                button.textContent = i18n[activeLanguage].tabs.pokemon;
+            }
+            if (button.dataset.tab === 'tmhm') {
+                button.textContent = i18n[activeLanguage].tabs.tmhm;
+            }
             button.classList.toggle('bg-blue-600', isActive);
             button.classList.toggle('text-white', isActive);
             button.classList.toggle('bg-slate-100', !isActive);
@@ -517,6 +617,10 @@ foreach ($availableVersions as $versionKey) {
         }
     }
 
+    function localizeType(typeName) {
+        const englishType = String(typeName || '').toLowerCase();
+        return i18n[activeLanguage].types[englishType] || String(typeName || '');
+    }
 
     function showLoadingOverlay() {
         if (!loadingOverlay) {
@@ -667,7 +771,21 @@ foreach ($availableVersions as $versionKey) {
             const nextName = activeLanguage === 'ja' && japaneseName !== '' ? japaneseName : englishName;
             pokemonNameNode.textContent = nextName;
             pokemonNameNode.classList.toggle('capitalize', activeLanguage !== 'ja');
+
+            card.querySelectorAll('[data-type-en]').forEach((typeNode) => {
+                const englishType = typeNode.dataset.typeEn || '';
+                typeNode.textContent = localizeType(englishType);
+            });
         });
+
+        getTmhmCards().forEach((card) => {
+            card.querySelectorAll('[data-type-en]').forEach((typeNode) => {
+                const englishType = typeNode.dataset.typeEn || '';
+                typeNode.textContent = localizeType(englishType);
+            });
+        });
+
+        setActiveTab();
     }
 
     if (languageSelector) {
