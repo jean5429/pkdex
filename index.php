@@ -108,6 +108,16 @@ $text = [
     <link rel="shortcut icon" href="favicon.svg">
     <title>PKDex Database Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        (function(){
+            try {
+                var theme = localStorage.getItem('pkdex:theme') || 'dark';
+                document.documentElement.dataset.theme = theme;
+            } catch (e) {
+                document.documentElement.dataset.theme = 'dark';
+            }
+        })();
+    </script>
     <style>
         .page-loading-overlay {
             position: fixed;
@@ -140,6 +150,22 @@ $text = [
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        :root[data-theme="dark"] { color-scheme: dark; }
+        :root[data-theme="light"] { color-scheme: light; }
+        body { transition: background-color 160ms ease, color 160ms ease; }
+        :root[data-theme="dark"] body { background: #020617 !important; color: #e2e8f0 !important; }
+        :root[data-theme="dark"] .bg-white, :root[data-theme="dark"] .bg-zinc-100, :root[data-theme="dark"] .bg-zinc-200, :root[data-theme="dark"] .bg-slate-50, :root[data-theme="dark"] .bg-slate-100 { background-color: #0f172a !important; }
+        :root[data-theme="dark"] .border-slate-200, :root[data-theme="dark"] .border-slate-300 { border-color: #334155 !important; }
+        :root[data-theme="dark"] .text-slate-900, :root[data-theme="dark"] .text-slate-800, :root[data-theme="dark"] .text-slate-700, :root[data-theme="dark"] .text-slate-600, :root[data-theme="dark"] .text-slate-500 { color: #cbd5e1 !important; }
+        :root[data-theme="dark"] .bg-slate-200, :root[data-theme="dark"] .bg-zinc-300 { background-color: #1e293b !important; }
+        :root[data-theme="dark"] .hover\:bg-slate-200:hover, :root[data-theme="dark"] .hover\:bg-zinc-400:hover { background-color: #334155 !important; }
+        :root[data-theme="dark"] .bg-amber-50 { background-color: #451a03 !important; }
+        :root[data-theme="dark"] .text-amber-900 { color: #fde68a !important; }
+        :root[data-theme="dark"] .bg-blue-200 { background-color: #1d4ed8 !important; }
+        :root[data-theme="dark"] .text-blue-800 { color: #dbeafe !important; }
+        .theme-toggle { width: 2.5rem; height: 2.5rem; border-radius: 9999px; border: 1px solid #94a3b8; display:flex; align-items:center; justify-content:center; background:#ffffff; color:#0f172a; }
+        :root[data-theme="dark"] .theme-toggle { background:#1e293b; color:#f8fafc; border-color:#475569; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
@@ -153,6 +179,9 @@ $text = [
                 <p class="text-blue-600 font-bold tracking-widest text-sm uppercase">📘 PKDex</p>
                 <h1 class="text-2xl font-black sm:text-3xl">🔎 Pokédex</h1>
                 <p class="text-slate-600 mt-2"><?= htmlspecialchars($text['subtitle']) ?></p>
+            </div>
+            <div class="flex items-start gap-2">
+                <button id="theme-toggle" type="button" class="theme-toggle" aria-label="Alternar tema">🌙</button>
             </div>
             <div class="min-w-[170px]">
                 <label for="language-selector" class="block text-xs font-semibold uppercase tracking-wide text-slate-500"><?= htmlspecialchars($text['language']) ?></label>
@@ -334,6 +363,26 @@ $text = [
     const STORAGE_LANGUAGE_KEY = 'pkdex:selectedLanguage';
     const initialUrl = new URL(window.location.href);
     const queryTab = initialUrl.searchParams.get('tab');
+
+    const STORAGE_THEME_KEY = 'pkdex:theme';
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function applyTheme(theme) {
+        const normalized = theme === 'light' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = normalized;
+        if (themeToggle) {
+            themeToggle.textContent = normalized === 'dark' ? '🌙' : '☀️';
+            themeToggle.setAttribute('aria-label', normalized === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro');
+        }
+    }
+
+    const storedTheme = getStoredValue(STORAGE_THEME_KEY) || 'dark';
+    applyTheme(storedTheme);
+    themeToggle?.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        setStoredValue(STORAGE_THEME_KEY, next);
+    });
 
     function getStoredValue(key) {
         try {

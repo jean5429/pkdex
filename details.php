@@ -253,6 +253,16 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
     <link rel="shortcut icon" href="favicon.svg">
     <title>Pokémon details</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        (function(){
+            try {
+                var theme = localStorage.getItem('pkdex:theme') || 'dark';
+                document.documentElement.dataset.theme = theme;
+            } catch (e) {
+                document.documentElement.dataset.theme = 'dark';
+            }
+        })();
+    </script>
     <style>
         .page-loading-overlay {
             position: fixed;
@@ -285,6 +295,22 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        :root[data-theme="dark"] { color-scheme: dark; }
+        :root[data-theme="light"] { color-scheme: light; }
+        body { transition: background-color 160ms ease, color 160ms ease; }
+        :root[data-theme="dark"] body { background: #020617 !important; color: #e2e8f0 !important; }
+        :root[data-theme="dark"] .bg-white, :root[data-theme="dark"] .bg-zinc-100, :root[data-theme="dark"] .bg-zinc-200, :root[data-theme="dark"] .bg-slate-50, :root[data-theme="dark"] .bg-slate-100 { background-color: #0f172a !important; }
+        :root[data-theme="dark"] .border-slate-200, :root[data-theme="dark"] .border-slate-300 { border-color: #334155 !important; }
+        :root[data-theme="dark"] .text-slate-900, :root[data-theme="dark"] .text-slate-800, :root[data-theme="dark"] .text-slate-700, :root[data-theme="dark"] .text-slate-600, :root[data-theme="dark"] .text-slate-500 { color: #cbd5e1 !important; }
+        :root[data-theme="dark"] .bg-slate-200, :root[data-theme="dark"] .bg-zinc-300 { background-color: #1e293b !important; }
+        :root[data-theme="dark"] .hover\:bg-slate-200:hover, :root[data-theme="dark"] .hover\:bg-zinc-400:hover { background-color: #334155 !important; }
+        :root[data-theme="dark"] .bg-amber-50 { background-color: #451a03 !important; }
+        :root[data-theme="dark"] .text-amber-900 { color: #fde68a !important; }
+        :root[data-theme="dark"] .bg-blue-200 { background-color: #1d4ed8 !important; }
+        :root[data-theme="dark"] .text-blue-800 { color: #dbeafe !important; }
+        .theme-toggle { width: 2.5rem; height: 2.5rem; border-radius: 9999px; border: 1px solid #94a3b8; display:flex; align-items:center; justify-content:center; background:#ffffff; color:#0f172a; }
+        :root[data-theme="dark"] .theme-toggle { background:#1e293b; color:#f8fafc; border-color:#475569; }
     </style>
 </head>
 <body class="min-h-screen bg-zinc-200 text-slate-800">
@@ -292,6 +318,9 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
     <div class="loading-spinner" role="status" aria-label="Loading"></div>
 </div>
 <main class="mx-auto max-w-7xl p-4 sm:p-6">
+    <div class="mb-4 flex justify-end">
+        <button id="theme-toggle" type="button" class="theme-toggle" aria-label="Alternar tema">🌙</button>
+    </div>
     <?php if ($pokemon === null): ?>
         <section class="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-red-900">
             Pokémon not found in database.
@@ -518,6 +547,33 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
     (() => {
         const loadingOverlay = document.getElementById('page-loading-overlay');
         const backToMainListLink = document.getElementById('back-to-main-list');
+        const themeToggle = document.getElementById('theme-toggle');
+        const STORAGE_THEME_KEY = 'pkdex:theme';
+
+        const applyTheme = (theme) => {
+            const normalized = theme === 'light' ? 'light' : 'dark';
+            document.documentElement.dataset.theme = normalized;
+            if (themeToggle) {
+                themeToggle.textContent = normalized === 'dark' ? '🌙' : '☀️';
+                themeToggle.setAttribute('aria-label', normalized === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro');
+            }
+        };
+
+        try {
+            applyTheme(localStorage.getItem(STORAGE_THEME_KEY) || 'dark');
+        } catch (error) {
+            applyTheme('dark');
+        }
+
+        themeToggle?.addEventListener('click', () => {
+            const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            try {
+                localStorage.setItem(STORAGE_THEME_KEY, next);
+            } catch (error) {
+                // Ignore storage issues.
+            }
+        });
 
         const showLoadingOverlay = () => {
             if (!loadingOverlay) {
