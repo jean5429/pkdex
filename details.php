@@ -649,9 +649,9 @@ if ($pokemon !== null && $pokemon['evolution_chain'] !== []) {
                     typeCell.className = 'px-2 py-1.5';
                     const typeBadge = document.createElement('span');
                     const moveType = String(move.move_type ?? 'unknown');
-                    const moveTypeKey = moveType.toLowerCase();
-                    typeBadge.className = 'inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-bold lowercase text-white ' + (typeColorMap[moveTypeKey] || 'bg-slate-500');
-                    typeBadge.textContent = moveType.toLowerCase();
+                    const moveTypeKey = moveType.toUpperCase();
+                    typeBadge.className = 'inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white ' + (typeColorMap[moveTypeKey.toLowerCase()] || 'bg-slate-500');
+                    typeBadge.textContent = moveType.toUpperCase();
                     typeCell.appendChild(typeBadge);
 
                     const detailCell = document.createElement('td');
