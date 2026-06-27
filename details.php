@@ -196,8 +196,8 @@ $typeColors = [
     'bug' => 'bg-lime-500',
     'fairy' => 'bg-pink-400',
     'ice' => 'bg-cyan-300',
-    'steel' => 'bg-slate-300',
-    'electric' => 'bg-yellow-400',
+    'steel' => 'bg-slate-300 !text-black',
+    'electric' => 'bg-yellow-400 !text-black',
     'fighting' => 'bg-red-500',
     'poison' => 'bg-purple-500',
     'flying' => 'bg-indigo-400',
@@ -205,7 +205,7 @@ $typeColors = [
     'ghost' => 'bg-violet-500',
     'dragon' => 'bg-indigo-600',
     'dark' => 'bg-neutral-600',
-    'normal' => 'bg-zinc-400',
+    'normal' => 'bg-zinc-400 !text-black',
 ];
 
 $artworkBaseUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/';

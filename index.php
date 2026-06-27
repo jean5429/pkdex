@@ -41,8 +41,8 @@ $typeColors = [
     'bug' => 'bg-lime-500',
     'fairy' => 'bg-pink-400',
     'ice' => 'bg-cyan-300',
-    'steel' => 'bg-slate-300 text-slate-800',
-    'electric' => 'bg-yellow-400 text-slate-900',
+    'steel' => 'bg-slate-300 !text-black',
+    'electric' => 'bg-yellow-400 !text-black',
     'fighting' => 'bg-red-500',
     'poison' => 'bg-purple-500',
     'flying' => 'bg-indigo-400',
@@ -50,7 +50,7 @@ $typeColors = [
     'ghost' => 'bg-violet-500',
     'dragon' => 'bg-indigo-600',
     'dark' => 'bg-neutral-600',
-    'normal' => 'bg-zinc-400',
+    'normal' => 'bg-zinc-400 !text-black',
 ];
 
 $versionStyleMap = [];
